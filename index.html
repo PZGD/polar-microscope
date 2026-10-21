@@ -513,14 +513,32 @@
             #ui-container2 > label:last-child > span:first-child { display: none; }
             #activity-text, #mineral-desc, #now-explain, #part-panel, #glossary-list .gl-item, #term-tip { word-break: keep-all; overflow-wrap: anywhere; }
         }
-    </style>    </style>
+        /* ===== 간단판 (G11) — body.lite 일 때만 적용 ===== */
+        body.lite .lite-hide, body.lite #btn-bertrand, body.lite #mode-badge { display: none !important; }
+        body.lite #ui-container { gap: 16px 28px; }
+        body.lite #ui-container > label { justify-content: flex-start; }
+        body.lite .lite-rot-row { display: flex; align-items: center; gap: 10px; }
+        body.lite .lite-rot-row #btn-rotate { flex: 0 0 auto; white-space: nowrap; }
+        #lite-foot { display: none; }
+        body.lite #lite-foot { display: block; width: 100%; text-align: center; margin: 22px 0 8px; font-size: 14px; }
+        body.lite #lite-foot a { color: #9fb4ff; text-decoration: underline; padding: 6px 8px; }
+        body.lite.light #lite-foot a { color: #2f4fb0; }
+        @media (max-width: 760px) {
+            body.lite #ui-container > label:nth-child(3) { grid-column: 1 / -1; }
+            body.lite #ui-container > label:nth-child(4) { grid-column: 1 / -1; }
+            body.lite .lite-rot-row { gap: 8px; }
+            body.lite .lite-rot-row #btn-rotate { grid-column: auto; flex: 0 0 auto; min-width: 96px; }
+            body.lite .lite-rot-row input[type="range"] { flex: 1 1 auto; min-width: 0; width: auto !important; }
+            body.lite #lite-foot a { display: inline-block; min-height: 44px; line-height: 32px; }
+        }
+    </style>
 </head>
 
 <body>
     <h1>편광 현미경 시뮬레이션</h1>
     <button class="mode-btn" id="btn-theme" title="화면 밝기 바꾸기">밝은 화면</button>
 
-    <div class="mode-btn-group" id="tabs">
+    <div class="mode-btn-group lite-hide" id="tabs">
         <button class="mode-btn active-xpl" id="tab-obs">박편 관찰</button>
         <button class="mode-btn" id="tab-struct">현미경 구조</button>
     </div>
@@ -552,7 +570,7 @@
             <div class="mode-btn-group">
                 <button class="mode-btn active-ppl" id="btn-ppl" data-term="ppl" onclick="setMode('ppl')">PPL</button>
                 <button class="mode-btn" id="btn-xpl" data-term="xpl" onclick="setMode('xpl')">XPL</button>
-                <button class="mode-btn" id="btn-bertrand" data-term="bertrand" onclick="setMode('bertrand')">Bertrand</button>
+                <button class="mode-btn lite-hide" id="btn-bertrand" data-term="bertrand" onclick="setMode('bertrand')">Bertrand</button>
             </div>
         </label>
         <label>
@@ -565,7 +583,7 @@
         </label>
     </div>
 
-    <div id="ui-container2">
+    <div id="ui-container2" class="lite-hide">
         <label>
             <span data-term="objective">대물렌즈</span>
             <select id="obj-select">
@@ -611,7 +629,7 @@
                 <span class="info-label">관찰 모드</span>
                 <span class="info-value" id="obs-mode">개방니콜 (PPL)</span>
             </div>
-            <div id="mode-badge" class="badge-ppl" data-term="ortho">PPL</div>
+            <div id="mode-badge" class="badge-ppl lite-hide" data-term="ortho">PPL</div>
 
             <div class="legend-section">
                 <h3>광물 정보</h3>
@@ -619,31 +637,31 @@
                     <span class="info-label">광물명</span>
                     <span class="info-value" id="info-name">-</span>
                 </div>
-                <div class="info-row">
+                <div class="info-row lite-hide">
                     <span class="info-label" data-term="optic">광학계</span>
                     <span class="info-value" id="info-optic">-</span>
                 </div>
-                <div class="info-row">
+                <div class="info-row lite-hide">
                     <span class="info-label" data-term="biref">복굴절률 (Δn)</span>
                     <span class="info-value" id="info-bire">-</span>
                 </div>
-                <div class="info-row">
+                <div class="info-row lite-hide">
                     <span class="info-label" data-term="retard">경로차</span>
                     <span class="info-value" id="info-retard">-</span>
                 </div>
-                <div class="info-row">
+                <div class="info-row lite-hide">
                     <span class="info-label" data-term="order">간섭색 차수</span>
                     <span class="info-value" id="info-order">-</span>
                 </div>
-                <div class="info-row">
+                <div class="info-row lite-hide">
                     <span class="info-label" data-term="extinction">소광 종류</span>
                     <span class="info-value" id="info-ext">-</span>
                 </div>
-                <div class="info-row">
+                <div class="info-row lite-hide">
                     <span class="info-label" data-term="pleochroism">다색성</span>
                     <span class="info-value" id="info-pleo">-</span>
                 </div>
-                <div id="color-swatch"></div>
+                <div id="color-swatch" class="lite-hide"></div>
             </div>
 
             <div class="legend-section">
@@ -661,12 +679,12 @@
                 <div id="grain-info"></div>
             </div>
 
-            <div class="legend-section">
+            <div class="legend-section lite-hide">
                 <h3><span data-term="polarizer analyzer">편광판 배치</span></h3>
                 <canvas id="polarizer-diagram" width="260" height="150"></canvas>
             </div>
 
-            <div class="legend-section">
+            <div class="legend-section lite-hide">
                 <h3><span data-term="michel">미셀레비 간섭색 차트</span></h3>
                 <canvas id="ml-chart" width="260" height="58"></canvas>
             </div>
@@ -700,6 +718,34 @@
         </div>
     </div>
     <script>
+        // ===== 간단판 판정 (G11) =====
+        const LITE = !!window.LITE || new URLSearchParams(location.hash.slice(1)).get('lite') === '1';
+        const LITE_IDS = ['quartz', 'plagioclase', 'orthoclase', 'biotite', 'hornblende', 'augite'];
+        const LITE_SUFFIX = LITE ? ' (간단판)' : '';
+        if (LITE) {
+            document.body.classList.add('lite');
+            document.title = '편광 현미경 시뮬레이션 (간단판)';
+            document.querySelector('h1').textContent += LITE_SUFFIX;
+            // 자동 회전 단추를 첫째 조작 줄(재물대 회전)로 옮긴다
+            (function () {
+                const sl = document.getElementById('stage-slider');
+                const row = document.createElement('div');
+                row.className = 'lite-rot-row';
+                sl.parentNode.insertBefore(row, sl);
+                row.appendChild(sl);
+                row.appendChild(document.getElementById('btn-rotate'));
+            })();
+            // 페이지 맨 아래 연결
+            (function () {
+                const f = document.createElement('div');
+                f.id = 'lite-foot';
+                const a = document.createElement('a');
+                a.href = window.LITE_FULL_URL || 'index.html';
+                a.textContent = '전체 기능판 열기 →';
+                f.appendChild(a);
+                document.body.appendChild(f);
+            })();
+        }
         // ===== 밝은 화면 전환 (G4) =====
         function isLight() { return document.body.classList.contains('light'); }
         function setTheme(on, save) {
@@ -936,6 +982,7 @@
         const stageVal = document.getElementById('stage-val');
 
         minerals.forEach((m, i) => {
+            if (LITE && !LITE_IDS.includes(m.id)) return;
             const opt = document.createElement('option');
             opt.value = i;
             opt.textContent = m.name;
@@ -955,7 +1002,7 @@
         let quizMode = false, quizSet = 1, quizSetChosen = false;       // 동정 모드
         let lastSelForMeasure = null;
         const QUIZ_IDS = ['quartz', 'plagioclase', 'orthoclase', 'biotite', 'hornblende', 'augite'];
-        const H1_ORIGINAL = document.querySelector('h1').textContent;
+        const H1_ORIGINAL = document.querySelector('h1').textContent; // 간단판이면 ' (간단판)' 포함
         const TEACHER = new URLSearchParams(location.hash.slice(1)).get('teacher') === '1';
 
         // ===== 결정 그레인 생성 =====
@@ -2075,12 +2122,14 @@
                 const g = selectedGrain;
                 const gR = mineral.birefringence * g.bireFactor * g.thickness * 1000; // 이 알갱이의 경로차 (nm)
                 let rows = '';
-                if (g.section && !quizMode) { // 동정 모드에서는 '단면' 줄 자체를 숨김 (줄 유무가 힌트가 됨)
+                if (!LITE && g.section && !quizMode) { // 동정 모드에서는 '단면' 줄 자체를 숨김 (줄 유무가 힌트가 됨)
                     rows += grainInfoRow('단면', g.section === 'long' ? '세로 단면 (벽개 1방향)' : '기저 단면 (벽개 2방향)', true);
                 }
-                rows += grainInfoRow('경로차', Math.round(gR) + ' nm', true);
-                rows += grainInfoRow('간섭색 차수',
-                    mineral.opticType === 'isotropic' ? '해당 없음' : getInterferenceOrder(gR), true);
+                if (!LITE) {
+                    rows += grainInfoRow('경로차', Math.round(gR) + ' nm', true);
+                    rows += grainInfoRow('간섭색 차수',
+                        mineral.opticType === 'isotropic' ? '해당 없음' : getInterferenceOrder(gR), true);
+                }
                 // 현재 밝기 — XPL에서는 sin²(2θ) (calculateGrainColor와 같은 식)
                 let bright;
                 if (currentMode === 'ppl') {
@@ -2112,6 +2161,7 @@
 
         // 소광각 측정 상자 (XPL·보상기 없음일 때만)
         function extMeasureBoxHTML() {
+            if (LITE) return '';
             if (currentMode !== 'xpl' || getCompensatorR() > 0) {
                 return '<div style="font-size:13.5px;color:#8899aa;margin-top:8px"><span data-term="extangle">소광각</span> 측정은 XPL(보상기 없음)에서 할 수 있습니다.</div>';
             }
@@ -2223,9 +2273,10 @@
                     mineralSelect.appendChild(opt);
                 });
                 mineralSelect.selectedIndex = 0;
-                document.querySelector('h1').textContent = '편광 현미경 — 동정 모드 (세트 ' + quizSet + ')';
+                document.querySelector('h1').textContent = '편광 현미경 — 동정 모드 (세트 ' + quizSet + ')' + LITE_SUFFIX;
             } else {
                 minerals.forEach((m, i) => {
+                    if (LITE && !LITE_IDS.includes(m.id)) return;
                     const opt = document.createElement('option');
                     opt.value = i;
                     opt.textContent = m.name;
@@ -2336,14 +2387,16 @@
         // URL 해시로 초기 상태 지정 가능: #mineral=quartz&mode=xpl&stage=45
         (function applyHash() {
             const h = new URLSearchParams(location.hash.slice(1));
-            const mid = h.get('mineral');
+            let mid = h.get('mineral');
+            if (LITE && mid && !LITE_IDS.includes(mid)) mid = 'quartz';
             if (mid) {
                 const idx = minerals.findIndex(m => m.id === mid);
                 if (idx >= 0) mineralSelect.value = idx;
             }
             const s = parseFloat(h.get('stage'));
             if (!isNaN(s)) { stageSlider.value = s; stageVal.textContent = stageSlider.value + '°'; }
-            const m = h.get('mode');
+            let m = h.get('mode');
+            if (LITE && m === 'bertrand') m = 'ppl';
             if (m && ['ppl', 'xpl', 'bertrand'].includes(m)) {
                 currentMode = m;
                 document.getElementById('btn-ppl').className = 'mode-btn' + (m === 'ppl' ? ' active-ppl' : '');
@@ -2351,19 +2404,19 @@
                 document.getElementById('btn-bertrand').className = 'mode-btn' + (m === 'bertrand' ? ' active-bertrand' : '');
             }
             const obj = h.get('obj');
-            if (obj && ['4', '10', '40'].includes(obj)) document.getElementById('obj-select').value = obj;
+            if (!LITE && obj && ['4', '10', '40'].includes(obj)) document.getElementById('obj-select').value = obj;
             const comp = h.get('comp');
-            if (comp && ['none', 'gypsum', 'quarter', 'wedge'].includes(comp)) {
+            if (!LITE && comp && ['none', 'gypsum', 'quarter', 'wedge'].includes(comp)) {
                 document.getElementById('comp-select').value = comp;
                 document.getElementById('wedge-label').style.display = comp === 'wedge' ? 'flex' : 'none';
             }
             const wedge = parseFloat(h.get('wedge'));
-            if (!isNaN(wedge)) {
+            if (!LITE && !isNaN(wedge)) {
                 document.getElementById('wedge-slider').value = wedge;
                 document.getElementById('wedge-val').textContent = document.getElementById('wedge-slider').value + ' nm';
             }
             const light = parseFloat(h.get('light'));
-            if (!isNaN(light)) {
+            if (!LITE && !isNaN(light)) {
                 document.getElementById('light-slider').value = light;
                 document.getElementById('light-val').textContent = document.getElementById('light-slider').value + '%';
             }
@@ -3189,7 +3242,7 @@
         const pid = h.get('part');
         if (pid && byId[pid]) sel = pid;
         renderPanel();
-        if (h.get('tab') === 'struct') showTab('struct');
+        if (h.get('tab') === 'struct' && !LITE) showTab('struct');
     })();
 })();
     </script>
