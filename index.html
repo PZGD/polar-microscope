@@ -1,0 +1,3198 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>편광 현미경 시뮬레이션</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #050508;
+            color: #e0e0e0;
+            font-family: 'Malgun Gothic', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        h1 {
+            font-size: 22px;
+            margin-bottom: 12px;
+            color: #c8cce0;
+            text-shadow: 0 0 20px rgba(100, 140, 255, 0.3);
+        }
+
+        #ui-container {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16162a 100%);
+            padding: 16px 28px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(100, 100, 180, 0.15);
+        }
+
+        #ui-container2 {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16162a 100%);
+            padding: 12px 28px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(100, 100, 180, 0.15);
+        }
+
+        #ui-container2 input[type="range"] {
+            width: 130px;
+        }
+
+        #main-area {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        canvas#microscope {
+            background-color: #030305;
+            border: 1px solid rgba(100, 100, 180, 0.2);
+            border-radius: 50%;
+            box-shadow: 0 0 30px rgba(20, 20, 60, 0.5), inset 0 0 60px rgba(0, 0, 0, 0.8);
+        }
+
+        #info-panel {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16162a 100%);
+            padding: 20px;
+            border-radius: 12px;
+            width: 330px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(100, 100, 180, 0.15);
+        }
+
+        #info-panel h3 {
+            color: #8899cc;
+            font-size: 15px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(100, 100, 180, 0.2);
+            padding-bottom: 6px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .info-label { color: #8899aa; }
+        .info-value { color: #dde0f0; font-weight: 500; }
+
+        #color-swatch {
+            width: 100%;
+            height: 30px;
+            border-radius: 6px;
+            margin-top: 8px;
+            border: 1px solid rgba(100, 100, 180, 0.3);
+        }
+
+        label {
+            display: flex;
+            flex-direction: column;
+            font-size: 14px;
+            gap: 6px;
+            font-weight: 500;
+            color: #aab;
+        }
+
+        label span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        select {
+            background: #222240;
+            color: #dde;
+            border: 1px solid rgba(100, 100, 180, 0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: rgba(100, 140, 255, 0.5);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 180px;
+            height: 6px;
+            border-radius: 3px;
+            background: #2a2a4a;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6688cc, #4466aa);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .angle-display {
+            color: #88aadd;
+            font-size: 14px;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        /* 모드 버튼 */
+        .mode-btn-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        .mode-btn {
+            padding: 9px 18px;
+            border-radius: 8px;
+            border: 1px solid rgba(100, 100, 180, 0.3);
+            background: #222240;
+            color: #99a;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .mode-btn:hover {
+            background: #2a2a50;
+            border-color: rgba(100, 140, 255, 0.4);
+        }
+
+        .mode-btn.active-ppl {
+            background: rgba(255, 200, 60, 0.2);
+            color: #ffdd77;
+            border-color: rgba(255, 200, 60, 0.5);
+            box-shadow: 0 0 12px rgba(255, 200, 60, 0.15);
+        }
+
+        .mode-btn.active-xpl {
+            background: rgba(100, 140, 255, 0.2);
+            color: #88aaff;
+            border-color: rgba(100, 140, 255, 0.5);
+            box-shadow: 0 0 12px rgba(100, 140, 255, 0.15);
+        }
+
+        .mode-btn.active-bertrand {
+            background: rgba(100, 220, 180, 0.2);
+            color: #77ddbb;
+            border-color: rgba(100, 220, 180, 0.5);
+            box-shadow: 0 0 12px rgba(100, 220, 180, 0.15);
+        }
+
+        #mode-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .badge-ppl {
+            background: rgba(255, 220, 100, 0.2);
+            color: #ffdd77;
+            border: 1px solid rgba(255, 220, 100, 0.3);
+        }
+
+        .badge-xpl {
+            background: rgba(100, 140, 255, 0.2);
+            color: #88aaff;
+            border: 1px solid rgba(100, 140, 255, 0.3);
+        }
+
+        .badge-bertrand {
+            background: rgba(100, 220, 180, 0.2);
+            color: #77ddbb;
+            border: 1px solid rgba(100, 220, 180, 0.3);
+        }
+
+        #mineral-desc {
+            font-size: 14px;
+            color: #e6e9f5;
+            line-height: 1.75;
+        }
+        #mineral-desc b { color: #ffd84d; font-weight: bold; }
+
+        .legend-section {
+            margin-top: 14px;
+        }
+
+        .legend-section h3 {
+            margin-bottom: 8px;
+        }
+
+        #polarizer-diagram {
+            margin-top: 4px;
+            border-radius: 6px;
+        }
+
+        /* ===== 탭 / 현미경 구조 탭 ===== */
+        #tabs { margin-bottom: 12px; }
+        #tabs .mode-btn { transition: none; }
+        #view-obs { display: flex; flex-direction: column; align-items: center; }
+        #view-struct { display: none; gap: 20px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
+        #scope-col { display: flex; flex-direction: column; }
+        #scope-bar { display: flex; gap: 6px; margin-bottom: 8px; }
+        #scope-bar .mode-btn { padding: 7px 14px; }
+        canvas#scope3d { background-color: #0b0b14; border-radius: 12px; border: 1px solid rgba(100, 100, 180, 0.2); touch-action: none; }
+        #scope-hint { font-size: 13px; color: #8899aa; margin-top: 8px; }
+        #part-panel {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16162a 100%);
+            padding: 20px;
+            border-radius: 12px;
+            width: 320px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(100, 100, 180, 0.15);
+            font-size: 14px;
+            line-height: 1.7;
+            color: #c8cce0;
+        }
+        #part-panel h3 { color: #8899cc; font-size: 16px; margin-bottom: 10px; border-bottom: 1px solid rgba(100, 100, 180, 0.2); padding-bottom: 6px; }
+        #part-panel p { margin-bottom: 10px; }
+        #part-panel hr { border: 0; border-top: 1px solid rgba(100, 100, 180, 0.2); margin: 10px 0; }
+        #part-panel .pp-sim { font-size: 13px; color: #8899aa; margin-bottom: 10px; }
+        #part-panel .pp-item { display: inline-block; margin: 2px 8px 2px 0; color: #aab8e8; cursor: pointer; border-bottom: 1px dotted rgba(136, 153, 204, 0.5); }
+        #part-panel .pp-item:hover { color: #ffd84d; }
+        #part-panel .mode-btn { padding: 7px 14px; font-size: 14px; }
+        /* ===== 학습지 활동 안내판 (G2) ===== */
+        #activity-bar {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16162a 100%);
+            padding: 12px 28px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(100, 100, 180, 0.15);
+            max-width: 100%;
+        }
+
+        #activity-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        #activity-title {
+            color: #8899cc;
+            font-weight: bold;
+            font-size: 14px;
+            margin-right: 6px;
+        }
+
+        #btn-guide-close {
+            margin-left: auto;
+            background: none;
+            border: 1px solid rgba(100, 100, 180, 0.3);
+            color: #8899aa;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        #btn-guide-close:hover { color: #dde0f0; }
+
+        #activity-guide {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16162a 100%);
+            border: 1px solid rgba(100, 100, 180, 0.15);
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #dde0f0;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        #activity-num {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffd84d;
+            min-width: 24px;
+            text-align: center;
+        }
+        #activity-text { flex: 1; min-width: 240px; }
+
+        /* ===== 용어 풀이 / 용어 정리 (G3) ===== */
+        [data-term] { cursor: help; border-bottom: 1px dotted #8899aa; }
+        select[data-term] { border-bottom: 1px solid rgba(100, 100, 180, 0.3); }
+        label > [data-term] { align-self: flex-start; }
+        #btn-glossary { margin-left: auto; padding: 4px 12px; font-size: 14px; }
+        #btn-glossary + #btn-guide-close { margin-left: 0; }
+        #term-tip {
+            position: fixed; display: none; max-width: 340px; z-index: 100000;
+            background: #10101e; border: 1px solid #8899cc; border-radius: 8px;
+            padding: 8px 12px; font-size: 14px; line-height: 1.6; color: #dde0f0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7); pointer-events: none;
+        }
+        #term-tip b { color: #ffd84d; }
+        #term-tip .tt-sep { margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(136, 153, 204, 0.3); }
+        #glossary-overlay {
+            position: fixed; left: 0; top: 0; right: 0; bottom: 0; display: none;
+            background: rgba(0, 0, 0, 0.65); z-index: 99000;
+            align-items: center; justify-content: center; padding: 16px;
+        }
+        #glossary-box {
+            background: #1a1a2e; border: 1px solid rgba(100, 100, 180, 0.4); border-radius: 12px;
+            width: 100%; max-width: 720px; max-height: 80vh; overflow-y: auto; padding: 18px 22px;
+            color: #dde0f0; box-shadow: 0 8px 40px rgba(0, 0, 0, 0.8);
+        }
+        #glossary-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        #glossary-head h2 { color: #8899cc; font-size: 18px; flex: 0 0 auto; }
+        #glossary-search {
+            flex: 1; min-width: 0; background: #222240; color: #dde0f0; border: 1px solid rgba(100, 100, 180, 0.3);
+            border-radius: 6px; padding: 7px 10px; font-size: 14px; font-family: inherit;
+        }
+        #glossary-close { padding: 4px 12px; font-size: 16px; }
+        #glossary-list h3 { color: #8899cc; font-size: 14px; margin: 14px 0 6px; border-bottom: 1px solid rgba(100, 100, 180, 0.2); padding-bottom: 4px; }
+        #glossary-list .gl-item { font-size: 14px; line-height: 1.65; margin-bottom: 7px; }
+        #glossary-list .gl-item b { color: #ffd84d; }
+        #glossary-list .gl-none { font-size: 14px; color: #8899aa; margin-top: 14px; }
+
+        /* ===== 밝은 화면 (G4) — body.light 덮어쓰기 ===== */
+        #btn-theme { position: absolute; top: 14px; right: 16px; padding: 5px 12px; font-size: 14px; }
+        body { position: relative; }
+        body.light { background-color: #f4f5f8; color: #1f2430; }
+        body.light h1 { color: #3b4a7a; text-shadow: none; }
+        body.light #ui-container, body.light #ui-container2, body.light #info-panel, body.light #part-panel,
+        body.light #activity-bar, body.light #activity-guide {
+            background: #ffffff; border: 1px solid #c9cfdc; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        body.light #activity-guide { box-shadow: none; color: #1f2430; }
+        body.light canvas#microscope { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18); }
+        body.light #info-panel h3, body.light #part-panel h3, body.light #activity-title,
+        body.light #glossary-head h2, body.light #glossary-list h3 { color: #3b4a7a; border-bottom-color: #c9cfdc; }
+        body.light .info-label, body.light #scope-hint, body.light #part-panel .pp-sim,
+        body.light #btn-guide-close, body.light #glossary-list .gl-none { color: #5a6478; }
+        body.light #btn-guide-close { border-color: #c9cfdc; background: #eef1f7; }
+        body.light #btn-guide-close:hover { color: #1f2430; }
+        body.light .info-value, body.light #now-explain { color: #1f2430 !important; }
+        body.light #mineral-desc { color: #1f2430; }
+        body.light #mineral-desc b { color: #9a6a00; }
+        body.light #info-panel div[style*="#8899aa"], body.light #info-panel span[style*="#8899aa"] { color: #5a6478 !important; }
+        body.light #grain-info div { color: #1f2430; }
+        body.light #grain-info div[style*="#8899aa"] { color: #5a6478 !important; }
+        body.light #grain-info div[style*="#ffd84d"] { color: #9a6a00 !important; }
+        body.light #part-panel { color: #1f2430; }
+        body.light #part-panel .pp-item { color: #3b4a7a; border-bottom-color: rgba(59, 74, 122, 0.5); }
+        body.light #part-panel .pp-item:hover { color: #9a6a00; }
+        body.light label { color: #5a6478; }
+        body.light .angle-display { color: #3b4a7a; }
+        body.light #color-swatch { border-color: #c9cfdc; }
+        body.light #activity-num { color: #8a6200; }
+        body.light .mode-btn { background: #eef1f7; color: #3b4a7a; border-color: #c9cfdc; }
+        body.light .mode-btn:hover { background: #e2e7f2; border-color: #aeb8d0; }
+        body.light .mode-btn.active-ppl { background: #fff3cf; color: #8a6200; border-color: #e2b84a; box-shadow: none; }
+        body.light .mode-btn.active-xpl { background: #e3ebff; color: #2f4fb0; border-color: #8fa8f0; box-shadow: none; }
+        body.light .mode-btn.active-bertrand { background: #dff5ec; color: #1d7a58; border-color: #7fcfb0; box-shadow: none; }
+        body.light .mode-btn:disabled { opacity: 0.85; }
+        body.light select, body.light #glossary-search { background: #ffffff; color: #1f2430; border: 1px solid #c9cfdc; }
+        body.light select:focus { border-color: #8fa8f0; }
+        body.light input[type="range"] { background: #d6dbe6; }
+        body.light .badge-ppl { background: #fff3cf; color: #8a6200; border: 1px solid #e2b84a; }
+        body.light .badge-xpl { background: #e3ebff; color: #2f4fb0; border: 1px solid #8fa8f0; }
+        body.light .badge-bertrand { background: #dff5ec; color: #1d7a58; border: 1px solid #7fcfb0; }
+        body.light canvas#scope3d { background-color: #f7f8fb; border-color: #c9cfdc; }
+        body.light canvas#polarizer-diagram, body.light canvas#ml-chart { border: 1px solid #e1e5ee; }
+        body.light [data-term] { border-bottom-color: #7a8499; }
+        body.light select[data-term] { border-bottom: 1px solid #c9cfdc; }
+        body.light #term-tip { background: #ffffff; border: 1px solid #3b4a7a; color: #1f2430; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18); }
+        body.light #term-tip b { color: #9a6a00; }
+        body.light #term-tip .tt-sep { border-top-color: #c9cfdc; }
+        body.light #glossary-overlay { background: rgba(40, 46, 66, 0.35); }
+        body.light #glossary-box { background: #ffffff; border: 1px solid #c9cfdc; color: #1f2430; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); }
+        body.light #glossary-list .gl-item b { color: #9a6a00; }
+
+        /* ===== 휴대폰·태블릿 대응 (G8) ===== */
+        canvas#microscope { width: min(520px, calc(100vw - 24px)); height: auto; aspect-ratio: 1 / 1; touch-action: manipulation; }
+        @media (min-width: 761px) {
+            #info-panel {
+                position: sticky; top: 8px; align-self: flex-start;
+                max-height: calc(100vh - 16px); overflow-y: auto;
+                scrollbar-width: thin; scrollbar-color: #3b4a7a transparent;
+            }
+            #info-panel::-webkit-scrollbar { width: 8px; }
+            #info-panel::-webkit-scrollbar-thumb { background: #3b4a7a; border-radius: 4px; }
+            body.light #info-panel { scrollbar-color: #9aa6c4 transparent; }
+            body.light #info-panel::-webkit-scrollbar-thumb { background: #9aa6c4; }
+        }
+        @media (max-width: 760px) {
+            body { padding: 8px; }
+            h1 { font-size: 18px; margin-bottom: 8px; text-align: center; }
+            #btn-theme { position: static; align-self: flex-end; margin-bottom: 8px; min-height: 40px; font-size: 14px; }
+            #tabs { width: 100%; margin-bottom: 8px; }
+            #tabs .mode-btn { flex: 1 1 0; min-height: 44px; }
+            #view-obs, #view-struct { width: 100%; }
+            .mode-btn { min-height: 40px; font-size: 14px; }
+            #activity-bar, #ui-container, #ui-container2 { width: 100%; padding: 10px 12px; margin-bottom: 8px; }
+            #activity-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+            #activity-title { grid-column: 1 / -1; margin: 0; }
+            #activity-row .mode-btn { padding: 6px 8px; min-height: 44px; }
+            #btn-glossary, #btn-guide-close { margin-left: 0; }
+            #btn-guide-close { min-height: 44px; font-size: 14px; padding: 6px 8px; }
+            #activity-guide { width: 100%; padding: 10px 12px; font-size: 15px; gap: 10px; }
+            #activity-num { font-size: 28px; }
+            #activity-text { min-width: 0; flex: 1 1 200px; }
+            #ui-container, #ui-container2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 10px; align-items: start; justify-content: stretch; }
+            #ui-container > label:nth-child(3), #ui-container > label:nth-child(4),
+            #ui-container2 > label:nth-child(n+3) { grid-column: 1 / -1; }
+            #ui-container label, #ui-container2 label { min-width: 0; font-size: 14px; }
+            #ui-container select, #ui-container2 select { width: 100%; min-height: 40px; font-size: 14px; padding: 6px 8px; }
+            #ui-container .mode-btn-group, #ui-container2 .mode-btn-group { width: 100%; gap: 5px; }
+            #ui-container .mode-btn-group .mode-btn { flex: 1 1 0; padding: 6px 2px; }
+            #ui-container label:nth-child(4) .mode-btn { width: 100%; }
+            #ui-container2 > label:last-child .mode-btn-group { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+            #ui-container2 > label:last-child .mode-btn { padding: 6px 2px; }
+            #btn-rotate { grid-column: 1 / -1; }
+            #ui-container input[type="range"], #ui-container2 input[type="range"] {
+                width: 100%; height: 36px; background: transparent; margin: 0;
+            }
+            body.light #ui-container input[type="range"], body.light #ui-container2 input[type="range"] { background: transparent; }
+            input[type="range"]::-webkit-slider-runnable-track { height: 10px; border-radius: 5px; background: #2a2a4a; }
+            body.light input[type="range"]::-webkit-slider-runnable-track { background: #d6dbe6; }
+            input[type="range"]::-webkit-slider-thumb { width: 26px; height: 26px; margin-top: -8px; }
+            input[type="range"]::-moz-range-thumb { width: 26px; height: 26px; }
+            #main-area { flex-direction: column; align-items: center; flex-wrap: nowrap; gap: 12px; width: 100%; }
+            canvas#microscope { width: min(520px, calc(100vw - 16px)); }
+            #info-panel { width: 100%; max-width: 520px; padding: 14px; position: static; max-height: none; overflow: visible; }
+            #info-panel canvas#polarizer-diagram, #info-panel canvas#ml-chart { width: 100%; height: auto; }
+            #view-struct { flex-direction: column; align-items: center; flex-wrap: nowrap; gap: 12px; }
+            #scope-col { width: 100%; align-items: center; }
+            #scope-bar { flex-wrap: wrap; justify-content: center; width: 100%; }
+            #scope-bar .mode-btn { padding: 6px 12px; }
+            canvas#scope3d { width: min(620px, calc(100vw - 16px)); height: auto; }
+            #scope-hint { font-size: 13px; }
+            #part-panel { width: 100%; max-width: 620px; padding: 14px; }
+            #part-panel .pp-item { padding: 5px 0; }
+            #glossary-overlay { padding: 8px; align-items: stretch; }
+            #glossary-box { max-width: 100%; height: 90vh; max-height: 90vh; margin: auto 0; padding: 14px; font-size: 14px; }
+            #glossary-search { min-height: 40px; }
+            #glossary-close { min-width: 44px; }
+            #term-tip { max-width: calc(100vw - 24px); }
+            #ui-container2 > label:last-child > span:first-child { display: none; }
+            #activity-text, #mineral-desc, #now-explain, #part-panel, #glossary-list .gl-item, #term-tip { word-break: keep-all; overflow-wrap: anywhere; }
+        }
+    </style>    </style>
+</head>
+
+<body>
+    <h1>편광 현미경 시뮬레이션</h1>
+    <button class="mode-btn" id="btn-theme" title="화면 밝기 바꾸기">밝은 화면</button>
+
+    <div class="mode-btn-group" id="tabs">
+        <button class="mode-btn active-xpl" id="tab-obs">박편 관찰</button>
+        <button class="mode-btn" id="tab-struct">현미경 구조</button>
+    </div>
+
+    <div id="view-obs">
+
+    <div id="activity-bar">
+        <div id="activity-row">
+            <span id="activity-title">학습지 활동</span>
+            <button class="mode-btn act-btn" data-act="1">1. 소광 관찰</button>
+            <button class="mode-btn act-btn" data-act="2">2. 석영·정장석</button>
+            <button class="mode-btn act-btn" data-act="3">3. 석영·사장석</button>
+            <button class="mode-btn act-btn" data-act="4">4. 시료 동정</button>
+            <button class="mode-btn" id="btn-glossary" data-open-glossary="1">용어 정리</button>
+            <button id="btn-guide-close">안내 닫기</button>
+        </div>
+        <div id="activity-guide">
+            <span id="activity-num"></span>
+            <span id="activity-text">학습지의 문항 번호를 누르면 필요한 화면으로 바뀌고, 눌러야 할 단추가 노랗게 반짝입니다.</span>
+        </div>
+    </div>
+    <div id="ui-container">
+        <label>
+            광물 선택
+            <select id="mineral-select"></select>
+        </label>
+        <label>
+            관찰 모드
+            <div class="mode-btn-group">
+                <button class="mode-btn active-ppl" id="btn-ppl" data-term="ppl" onclick="setMode('ppl')">PPL</button>
+                <button class="mode-btn" id="btn-xpl" data-term="xpl" onclick="setMode('xpl')">XPL</button>
+                <button class="mode-btn" id="btn-bertrand" data-term="bertrand" onclick="setMode('bertrand')">Bertrand</button>
+            </div>
+        </label>
+        <label>
+            <span><span data-term="stage">재물대 회전</span> <span class="angle-display" id="stage-val">0°</span></span>
+            <input type="range" id="stage-slider" min="0" max="360" value="0" step="1">
+        </label>
+        <label>
+            <span data-term="quiz">시험</span>
+            <button class="mode-btn" id="btn-quiz" data-term="quiz">동정 모드</button>
+        </label>
+    </div>
+
+    <div id="ui-container2">
+        <label>
+            <span data-term="objective">대물렌즈</span>
+            <select id="obj-select">
+                <option value="4">4× (저배율)</option>
+                <option value="10" selected>10× (중배율)</option>
+                <option value="40">40× (고배율)</option>
+            </select>
+        </label>
+        <label>
+            <span data-term="compensator">보상기</span>
+            <select id="comp-select" data-term="compensator">
+                <option value="none" selected>없음</option>
+                <option value="gypsum">집시판 (1λ, 530nm)</option>
+                <option value="quarter">λ/4판 (137nm)</option>
+                <option value="wedge">석영 쐐기</option>
+            </select>
+        </label>
+        <label id="wedge-label" style="display:none">
+            <span>쐐기 삽입량 <span class="angle-display" id="wedge-val">0 nm</span></span>
+            <input type="range" id="wedge-slider" min="0" max="2200" value="0" step="20">
+        </label>
+        <label>
+            <span><span data-term="light">조명 밝기</span> <span class="angle-display" id="light-val">100%</span></span>
+            <input type="range" id="light-slider" min="20" max="150" value="100" step="5">
+        </label>
+        <label>
+            <span>&nbsp;</span>
+            <div class="mode-btn-group">
+                <button class="mode-btn" id="btn-minus1" title="재물대 1° 감소">◀1°</button>
+                <button class="mode-btn" id="btn-plus1" title="재물대 1° 증가">1°▶</button>
+                <button class="mode-btn" id="btn-snap0" title="재물대 0°">0°</button>
+                <button class="mode-btn" id="btn-snap45" title="재물대 45° (최대 밝기)">45°</button>
+                <button class="mode-btn" id="btn-rotate" data-term="autorotate" title="재물대 자동 회전">자동 회전</button>
+            </div>
+        </label>
+    </div>
+
+    <div id="main-area">
+        <canvas id="microscope" width="520" height="520"></canvas>
+        <div id="info-panel">
+            <h3>관찰 상태</h3>
+            <div class="info-row">
+                <span class="info-label">관찰 모드</span>
+                <span class="info-value" id="obs-mode">개방니콜 (PPL)</span>
+            </div>
+            <div id="mode-badge" class="badge-ppl" data-term="ortho">PPL</div>
+
+            <div class="legend-section">
+                <h3>광물 정보</h3>
+                <div class="info-row">
+                    <span class="info-label">광물명</span>
+                    <span class="info-value" id="info-name">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label" data-term="optic">광학계</span>
+                    <span class="info-value" id="info-optic">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label" data-term="biref">복굴절률 (Δn)</span>
+                    <span class="info-value" id="info-bire">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label" data-term="retard">경로차</span>
+                    <span class="info-value" id="info-retard">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label" data-term="order">간섭색 차수</span>
+                    <span class="info-value" id="info-order">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label" data-term="extinction">소광 종류</span>
+                    <span class="info-value" id="info-ext">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label" data-term="pleochroism">다색성</span>
+                    <span class="info-value" id="info-pleo">-</span>
+                </div>
+                <div id="color-swatch"></div>
+            </div>
+
+            <div class="legend-section">
+                <h3>광물 설명</h3>
+                <div id="mineral-desc"></div>
+            </div>
+
+            <div class="legend-section">
+                <h3>지금 보이는 것</h3>
+                <div id="now-explain" style="font-size:14px;line-height:1.7;color:#e6e9f5"></div>
+            </div>
+
+            <div class="legend-section">
+                <h3>선택한 알갱이</h3>
+                <div id="grain-info"></div>
+            </div>
+
+            <div class="legend-section">
+                <h3><span data-term="polarizer analyzer">편광판 배치</span></h3>
+                <canvas id="polarizer-diagram" width="260" height="150"></canvas>
+            </div>
+
+            <div class="legend-section">
+                <h3><span data-term="michel">미셀레비 간섭색 차트</span></h3>
+                <canvas id="ml-chart" width="260" height="58"></canvas>
+            </div>
+        </div>
+    </div>
+    </div><!-- /view-obs -->
+
+    <div id="view-struct" style="display:none">
+        <div id="scope-col">
+            <div id="scope-bar">
+                <button class="mode-btn" id="btn-explode">분해도</button>
+                <button class="mode-btn active-ppl" id="btn-lightpath">빛의 경로 보기</button>
+                <button class="mode-btn" id="btn-front">정면으로</button>
+                <button class="mode-btn" id="btn-glossary2" data-open-glossary="1">용어 정리</button>
+            </div>
+            <canvas id="scope3d" width="620" height="680"></canvas>
+            <div id="scope-hint">좌우로 끌어서 돌려 보고, 부품을 클릭하면 설명이 나옵니다.</div>
+        </div>
+        <div id="part-panel"></div>
+    </div>
+
+    <div id="term-tip"></div>
+    <div id="glossary-overlay">
+        <div id="glossary-box" role="dialog" aria-label="용어 정리">
+            <div id="glossary-head">
+                <h2>용어 정리</h2>
+                <input type="text" id="glossary-search" placeholder="용어나 설명으로 찾기">
+                <button class="mode-btn" id="glossary-close" title="닫기">×</button>
+            </div>
+            <div id="glossary-list"></div>
+        </div>
+    </div>
+    <script>
+        // ===== 밝은 화면 전환 (G4) =====
+        function isLight() { return document.body.classList.contains('light'); }
+        function setTheme(on, save) {
+            document.body.classList.toggle('light', !!on);
+            const tb = document.getElementById('btn-theme');
+            if (tb) tb.textContent = on ? '어두운 화면' : '밝은 화면';
+            if (save) { try { localStorage.setItem('pm-theme', on ? 'light' : 'dark'); } catch (e) { } }
+        }
+        (function initTheme() {
+            let on = false;
+            try { if (localStorage.getItem('pm-theme') === 'light') on = true; } catch (e) { }
+            const ht = new URLSearchParams(location.hash.slice(1)).get('theme');
+            if (ht === 'light') on = true; else if (ht === 'dark') on = false;
+            setTheme(on, false);
+            document.getElementById('btn-theme').addEventListener('click', function () {
+                setTheme(!isLight(), true);
+                try { render(); } catch (e) { }
+                try { if (window.__scopeRedraw) window.__scopeRedraw(); } catch (e) { }
+            });
+        })();
+        // ===== 용어 사전 (G3) — 화면의 data-term 키와 연결 =====
+        // group: 조작 / 관찰 / 성질 / 간섭과 소광
+        const TERMS = {
+            ppl: { name: "개방 니콜 (PPL)", group: "관찰", desc: "아래쪽 편광판만 넣고 분석기를 뺀 상태. 광물 고유의 색, 다색성, 쪼개짐(벽개), 렐리프를 본다." },
+            xpl: { name: "직교 니콜 (XPL)", group: "관찰", desc: "편광판과 분석기를 진동 방향이 서로 직각이 되게 넣은 상태. 광물이 없는 곳은 검게 보이고, 광물은 간섭색과 소광을 보인다." },
+            bertrand: { name: "버틀랜드 렌즈 (Bertrand)", group: "관찰", desc: "고배율 직교 니콜에서 넣는 렌즈. 모이는 빛이 만든 간섭상(코노스코프 상)을 보여 주어 광학계와 광학 부호를 판정한다." },
+            ortho: { name: "오소스코프", group: "관찰", desc: "나란한 빛으로 박편 속 알갱이의 모습을 보는 보통의 관찰 방법." },
+            cono: { name: "코노스코프", group: "관찰", desc: "모이는 빛(수렴광)으로 간섭상을 보는 관찰 방법. 버틀랜드 렌즈를 넣어 본다." },
+            polarizer: { name: "편광판 (하부 편광판)", group: "조작", desc: "빛을 한 방향(이 시뮬레이션에서는 동-서)으로만 진동하게 만드는 판. 관찰 중 늘 빛이 지나는 길에 있다." },
+            analyzer: { name: "분석기 (상부 편광판)", group: "조작", desc: "편광판과 진동 방향이 직각(남-북)인 위쪽 편광판. 넣으면 직교 니콜, 빼면 개방 니콜이 된다." },
+            stage: { name: "재물대", group: "조작", desc: "박편을 올려놓고 돌리는 원형 받침. 둘레의 눈금으로 돌린 각도를 읽는다." },
+            crosshair: { name: "십자선", group: "조작", desc: "접안렌즈 안의 가로·세로 선. 가로는 편광판, 세로는 분석기의 진동 방향과 같아 방향의 기준이 된다." },
+            objective: { name: "대물렌즈", group: "조작", desc: "박편 바로 위에서 상을 확대하는 렌즈(4×·10×·40×). 배율이 클수록 좁은 곳을 크게 본다." },
+            compensator: { name: "보상기 (검판)", group: "조작", desc: "경통의 45° 홈에 끼우는 판. 일정한 경로차를 더하거나 빼서 간섭색을 바꾸고, 광학 부호와 진동 방향을 판정한다." },
+            gypsum: { name: "집시판 (1λ, 530nm)", group: "조작", desc: "경로차가 약 530nm인 보상기. 광물이 없는 곳이 1차 적자색이 되고, 경로차가 더해지면 청색 쪽, 빼지면 황색 쪽으로 바뀐다." },
+            quarter: { name: "λ/4판 (137nm)", group: "조작", desc: "경로차가 약 137nm(빛 파장의 4분의 1)인 보상기. 간섭색이 높은 광물이나 코노스코프 상의 부호 판정에 쓴다." },
+            wedge: { name: "석영 쐐기", group: "조작", desc: "밀어 넣을수록 경로차가 연속으로 커지는 쐐기 모양 보상기. 광물의 경로차를 잴 때 쓴다." },
+            light: { name: "조명 밝기", group: "조작", desc: "광원의 밝기. 실제 현미경의 조광기 다이얼에 해당한다." },
+            autorotate: { name: "자동 회전", group: "조작", desc: "재물대를 천천히 저절로 돌린다. 다시 누르면 멈춘다." },
+            quiz: { name: "동정 모드", group: "조작", desc: "이름을 가린 시료를 관찰해 광물 이름을 알아내는 시험 화면." },
+            identify: { name: "동정", group: "관찰", desc: "관찰한 특징을 근거로 광물의 이름을 알아내는 일." },
+            pleochroism: { name: "다색성", group: "성질", desc: "개방 니콜에서 재물대를 돌릴 때 광물의 색이 바뀌는 성질. 흑운모·각섬석에서 뚜렷하다." },
+            cleavage: { name: "벽개 (쪼개짐)", group: "성질", desc: "광물이 일정한 방향으로 잘 쪼개지는 성질. 박편에서는 나란한 가는 선으로 보이며, 방향의 수와 두 방향이 만나는 각(벽개각)이 감별 단서가 된다." },
+            relief: { name: "렐리프", group: "성질", desc: "광물의 윤곽이 도드라져 보이는 정도. 광물과 주변의 굴절률 차이가 클수록 높다." },
+            alteration: { name: "변질", group: "성질", desc: "광물이 물이나 열 때문에 점토 같은 다른 광물로 바뀐 것. 표면이 뿌옇게 흐려 보인다." },
+            twin: { name: "쌍정", group: "성질", desc: "한 결정 안에 결정 방향이 다른 부분이 규칙적으로 붙어 자란 것. 직교 니콜에서 부분마다 밝기가 달라 무늬로 보인다." },
+            section: { name: "단면 (세로·기저)", group: "성질", desc: "같은 광물도 잘린 방향에 따라 모양이 다르다. 세로 단면은 길쭉하고 벽개가 1방향, 기저 단면은 다각형이고 벽개가 2방향으로 보인다." },
+            optic: { name: "광학계 (등방성·일축성·이축성)", group: "성질", desc: "빛이 광물 안에서 갈라지는 방식에 따른 분류. 등방성은 갈라지지 않아 직교 니콜에서 늘 검고, 일축성은 광학축이 1개, 이축성은 2개다." },
+            sign: { name: "광학 부호 (+ / −)", group: "성질", desc: "일축성·이축성 광물을 두 무리로 나누는 성질. 코노스코프 상에 보상기를 넣었을 때 색이 바뀌는 방향으로 판정한다." },
+            twov: { name: "2V", group: "성질", desc: "이축성 광물의 두 광학축 사이의 각. 클수록 코노스코프 상의 두 곡선이 멀리 벌어진다." },
+            biref: { name: "복굴절률 (Δn)", group: "간섭과 소광", desc: "광물 안에서 갈라진 두 빛의 굴절률 차이. 클수록 간섭색이 높다." },
+            retard: { name: "경로차", group: "간섭과 소광", desc: "갈라진 두 빛이 박편을 지나며 생긴 빛의 길이 차이(nm). 복굴절률 × 박편 두께이며, 이 값이 간섭색을 정한다." },
+            interf: { name: "간섭색", group: "간섭과 소광", desc: "직교 니콜에서 경로차 때문에 나타나는 색. 경로차가 커질수록 1차, 2차, 3차로 색이 되풀이된다." },
+            order: { name: "간섭색 차수", group: "간섭과 소광", desc: "간섭색 띠가 몇 번째로 되풀이되는지(1차, 2차, …). 경로차 약 550nm마다 한 차수가 올라간다." },
+            michel: { name: "미셀레비 간섭색 차트", group: "간섭과 소광", desc: "경로차에 따른 간섭색을 차례로 늘어놓은 표. 간섭색을 보고 경로차와 복굴절률을 어림한다." },
+            extinction: { name: "소광", group: "간섭과 소광", desc: "직교 니콜에서 광물의 진동 방향이 십자선과 나란해질 때 광물이 검게 되는 것." },
+            straightext: { name: "직소광", group: "간섭과 소광", desc: "벽개나 결정의 길이 방향이 십자선과 나란할 때 일어나는 소광." },
+            inclinedext: { name: "사소광", group: "간섭과 소광", desc: "벽개가 십자선과 비스듬할 때 일어나는 소광. 그 사잇각이 소광각이다." },
+            extangle: { name: "소광각", group: "간섭과 소광", desc: "벽개(또는 결정의 길이 방향)와 소광 위치 사이의 각. 광물을 구별하는 단서가 된다." },
+            undulatory: { name: "파동 소광", group: "간섭과 소광", desc: "한 알갱이 안에서 소광이 물결처럼 옮겨 가는 것." },
+            mottled: { name: "얼룩 소광", group: "간섭과 소광", desc: "한 알갱이 안에서 소광이 얼룩덜룩하게 일어나는 것." },
+            brightness: { name: "현재 밝기", group: "간섭과 소광", desc: "선택한 알갱이가 지금 얼마나 밝은지를 가장 밝을 때를 100%로 나타낸 값. 0%에 가까우면 소광이다." },
+        };
+        // ===== 광물 데이터 =====
+        // extinctionType: straight(직소광) / inclined(사소광) / undulatory(파동소광) / mottled(얼룩소광) / isotropic(등방성)
+        // extinctionAngle: 사소광 각도(°). relief: 0(낮음)~1(높음). alteration: 변질(뿌연 표면) 0~1.
+        // cleavageAngles: 벽개 방향(°, 그레인 좌표계). 없으면 null.
+        // longCleavage: 길쭉한 단면(세로 단면)에서 보이는 벽개 — 있으면 그레인마다 기저/세로 단면을 나눈다.
+        const minerals = [
+            {
+                id: 'quartz', name: '석영 (Quartz)',
+                birefringence: 0.009,
+                pleochroismStrength: 0,
+                colorA: [240, 240, 240], colorB: [240, 240, 240],
+                crystalSystem: 'hexagonal',
+                opticType: 'uniaxial', opticSign: '+', twoV: 0,
+                extinctionType: 'undulatory', extinctionAngle: 0,
+                relief: 0.15, alteration: 0, cleavageAngles: null,
+                extinctionDesc: '파동 소광',
+                description: '무색 광물. PPL에서 무색투명, 표면이 깨끗하고 렐리프가 낮음. XPL에서 1차 회백색 간섭색과 특징적인 <b>파동 소광</b>(그레인 안에서 소광 위치가 물결처럼 어긋남). 벽개·쌍정·변질이 없는 것이 감별 포인트. 코노스코프에서 일축성(+) 간섭상.',
+                pleochroismDesc: '없음', opacity: 0.45
+            },
+            {
+                id: 'plagioclase', name: '사장석 (Plagioclase)',
+                birefringence: 0.010,
+                pleochroismStrength: 0,
+                colorA: [235, 235, 232], colorB: [235, 235, 232],
+                crystalSystem: 'triclinic',
+                opticType: 'biaxial', opticSign: '+', twoV: 77,
+                extinctionType: 'inclined', extinctionAngle: 8,
+                relief: 0.2, alteration: 0, cleavageAngles: [0, 86],
+                extinctionDesc: '사소광 (소광각 작음)',
+                twinning: 'albite', twinAngle: 18, // 알바이트 쌍정: 인접 도메인 간 방향 차이 (시각적 대비를 위해 강조)
+                description: 'PPL에서 무색투명. XPL에서 <b>알바이트 쌍정</b>에 의한 평행한 흑백 줄무늬가 가장 큰 특징. 인접한 쌍정 라멜라의 결정학적 방향이 달라 교대로 소광하며, 재물대를 회전하면 밝은 띠와 어두운 띠가 서로 반전됨. 사장석을 다른 장석(정장석 등)과 구별하는 결정적 기준.',
+                pleochroismDesc: '없음', opacity: 0.5
+            },
+            {
+                id: 'orthoclase', name: '정장석 (Orthoclase)',
+                birefringence: 0.008,
+                pleochroismStrength: 0,
+                colorA: [238, 236, 230], colorB: [238, 236, 230],
+                crystalSystem: 'monoclinic',
+                opticType: 'biaxial', opticSign: '-', twoV: 60,
+                extinctionType: 'straight', extinctionAngle: 0,
+                relief: 0.2, alteration: 0.75, cleavageAngles: [0, 90],
+                extinctionDesc: '직소광',
+                description: 'PPL에서 무색이지만 <b>표면이 뿌옇게 흐리다</b>. 물과 반응해 광물 일부가 <b>점토 광물로 변했기(변질) 때문</b>이다. 깨끗한 석영과 구별하는 결정적 단서. XPL에서 1차 회색, 쌍정이 없거나 단순함. 2방향 직교 벽개.',
+                pleochroismDesc: '없음', opacity: 0.5
+            },
+            {
+                id: 'olivine', name: '감람석 (Olivine)',
+                birefringence: 0.035,
+                pleochroismStrength: 0.1,
+                colorA: [230, 240, 220], colorB: [210, 235, 200],
+                crystalSystem: 'orthorhombic',
+                opticType: 'biaxial', opticSign: '+', twoV: 85,
+                extinctionType: 'straight', extinctionAngle: 0,
+                relief: 0.85, alteration: 0, cleavageAngles: null,
+                extinctionDesc: '직소광',
+                description: 'PPL에서 무색~연녹, <b>높은 렐리프</b>로 윤곽이 뚜렷함. XPL에서 높은 복굴절률로 선명한 2차 간섭색. 코노스코프에서 이축성(+) 간섭상, 2V≈85°로 아이소자이어가 넓게 벌어짐.',
+                pleochroismDesc: '매우 약함', opacity: 0.5
+            },
+            {
+                id: 'biotite', name: '흑운모 (Biotite)',
+                birefringence: 0.04,
+                pleochroismStrength: 0.9,
+                colorA: [140, 80, 30], colorB: [230, 210, 150],
+                crystalSystem: 'monoclinic',
+                opticType: 'biaxial', opticSign: '-', twoV: 15,
+                extinctionType: 'mottled', extinctionAngle: 0,
+                relief: 0.5, alteration: 0, cleavageAngles: [0],
+                extinctionDesc: '얼룩 소광',
+                description: '강한 다색성이 특징. PPL에서 재물대 회전 시 <b>진한 갈색↔연한 황색</b>으로 뚜렷하게 변화. 1방향 완벽 벽개, <b>얼룩 소광</b>(소광이 얼룩덜룩하게 일어남). 2V가 매우 작아(≈15°) 코노스코프에서 거의 일축성처럼 보임.',
+                pleochroismDesc: '강함 (갈색↔연황색)', opacity: 0.7
+            },
+            {
+                id: 'hornblende', name: '각섬석 (Hornblende)',
+                birefringence: 0.020,
+                pleochroismStrength: 0.7,
+                colorA: [60, 100, 50], colorB: [130, 100, 50],
+                crystalSystem: 'monoclinic',
+                opticType: 'biaxial', opticSign: '-', twoV: 65,
+                extinctionType: 'inclined', extinctionAngle: 20,
+                relief: 0.6, alteration: 0, cleavageAngles: [62, 118], longCleavage: [0],
+                extinctionDesc: '사소광 (소광각 ≈20°)',
+                description: '뚜렷한 다색성. PPL에서 <b>녹색↔갈색</b>으로 변화. <b>124°/56° 벽개각</b>이 특징(비스듬함). 소광각이 작은 사소광(≈20°) — 휘석(≈42°)과 구별. 코노스코프에서 이축성(-) 간섭상.',
+                pleochroismDesc: '강함 (녹색↔갈색)', opacity: 0.6
+            },
+            {
+                id: 'muscovite', name: '백운모 (Muscovite)',
+                birefringence: 0.036,
+                pleochroismStrength: 0.05,
+                colorA: [235, 235, 230], colorB: [240, 238, 232],
+                crystalSystem: 'monoclinic',
+                opticType: 'biaxial', opticSign: '-', twoV: 38,
+                extinctionType: 'straight', extinctionAngle: 0,
+                relief: 0.45, alteration: 0, cleavageAngles: [0],
+                extinctionDesc: '직소광 (거의)',
+                description: 'PPL에서 무색투명. XPL에서 높은 복굴절률로 선명한 2차 간섭색. 완벽한 1방향 벽개, 판상 형태. 코노스코프에서 이축성(-) 간섭상.',
+                pleochroismDesc: '매우 약함', opacity: 0.45
+            },
+            {
+                id: 'augite', name: '휘석 (Augite)',
+                birefringence: 0.025,
+                pleochroismStrength: 0.3,
+                colorA: [190, 210, 180], colorB: [210, 190, 160],
+                crystalSystem: 'monoclinic',
+                opticType: 'biaxial', opticSign: '+', twoV: 50,
+                extinctionType: 'inclined', extinctionAngle: 42,
+                relief: 0.65, alteration: 0, cleavageAngles: [46.5, 133.5], longCleavage: [0],
+                extinctionDesc: '사소광 (소광각 ≈42°)',
+                description: 'PPL에서 <b>연녹색↔연갈색으로 약하게</b> 변함(약한 다색성). <b>87°/93° 벽개각</b>이 특징(거의 직각 — 각섬석과 구별). 소광각이 큰 사소광(≈42°). 코노스코프에서 이축성(+) 간섭상.',
+                pleochroismDesc: '약함 (연녹↔연갈)', opacity: 0.55
+            },
+            {
+                id: 'calcite', name: '방해석 (Calcite)',
+                birefringence: 0.172,
+                pleochroismStrength: 0,
+                colorA: [245, 242, 228], colorB: [245, 242, 228],
+                crystalSystem: 'hexagonal',
+                opticType: 'uniaxial', opticSign: '-', twoV: 0,
+                extinctionType: 'straight', extinctionAngle: 0,
+                relief: 0.7, alteration: 0, cleavageAngles: [52.5, 127.5],
+                extinctionDesc: '대칭 소광',
+                description: '매우 높은 복굴절률(Δn=0.172)로 XPL에서 <b>고차 백색</b> 간섭색 — 미셀레비 차트 최상단의 진한 색이 사라진 흰색. 마름모꼴 벽개(75°/105°), 소광은 벽개에 대해 대칭. 렐리프가 방향에 따라 달라 보임.',
+                pleochroismDesc: '없음', opacity: 0.5
+            },
+            {
+                id: 'garnet', name: '석류석 (Garnet)',
+                birefringence: 0.000,
+                pleochroismStrength: 0,
+                colorA: [228, 198, 175], colorB: [228, 198, 175],
+                crystalSystem: 'cubic',
+                opticType: 'isotropic', opticSign: ' ', twoV: 0,
+                extinctionType: 'isotropic', extinctionAngle: 0,
+                relief: 0.75, alteration: 0, cleavageAngles: null,
+                extinctionDesc: '완전 소광 (등방성)',
+                description: '<b>등축계 광물로 등방성</b> — XPL에서 재물대를 아무리 돌려도 항상 검정(완전 소광). PPL에서 연한 적갈색, 높은 렐리프, 다각형의 자형 결정. 코노스코프에서도 간섭상이 형성되지 않음.',
+                pleochroismDesc: '없음', opacity: 0.55
+            }
+        ];
+
+        // ===== 캔버스 설정 =====
+        const canvas = document.getElementById('microscope');
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        const CX = W / 2, CY = H / 2, RADIUS = W / 2 - 10;
+        const FIELD_R = RADIUS / 0.4; // 박편 전체 반경 (4× 시야 = 10× 시야의 2.5배)
+
+        const diagCanvas = document.getElementById('polarizer-diagram');
+        const diagCtx = diagCanvas.getContext('2d');
+
+        // ===== 상태 =====
+        let currentMode = 'ppl'; // 'ppl', 'xpl', 'bertrand'
+        let autoRotate = false;  // 재물대 자동 회전
+
+        // 보상기 경로차(nm) — 없음이면 0
+        function getCompensatorR() {
+            const c = document.getElementById('comp-select').value;
+            if (c === 'gypsum') return 530;
+            if (c === 'quarter') return 137;
+            if (c === 'wedge') return parseFloat(document.getElementById('wedge-slider').value);
+            return 0;
+        }
+
+        // 조명 밝기 배율 (0.2~1.5)
+        function getLightFactor() {
+            return parseFloat(document.getElementById('light-slider').value) / 100;
+        }
+
+        // ===== UI 요소 =====
+        const mineralSelect = document.getElementById('mineral-select');
+        const stageSlider = document.getElementById('stage-slider');
+        const stageVal = document.getElementById('stage-val');
+
+        minerals.forEach((m, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = m.name;
+            mineralSelect.appendChild(opt);
+        });
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('btn-ppl').className = 'mode-btn' + (mode === 'ppl' ? ' active-ppl' : '');
+            document.getElementById('btn-xpl').className = 'mode-btn' + (mode === 'xpl' ? ' active-xpl' : '');
+            document.getElementById('btn-bertrand').className = 'mode-btn' + (mode === 'bertrand' ? ' active-bertrand' : '');
+            render();
+        }
+
+        // ===== D2 상태 =====
+        let extMeasure = { a1: null, a2: null }; // 소광각 측정 기록 (재물대 눈금)
+        let quizMode = false, quizSet = 1, quizSetChosen = false;       // 동정 모드
+        let lastSelForMeasure = null;
+        const QUIZ_IDS = ['quartz', 'plagioclase', 'orthoclase', 'biotite', 'hornblende', 'augite'];
+        const H1_ORIGINAL = document.querySelector('h1').textContent;
+        const TEACHER = new URLSearchParams(location.hash.slice(1)).get('teacher') === '1';
+
+        // ===== 결정 그레인 생성 =====
+        let grains = [];
+        let selectedGrain = null; // 클릭으로 선택된 알갱이
+
+        function generateGrains(mineral) {
+            grains = [];
+            selectedGrain = null;
+            // 4× 저배율에서도 시야가 차도록 10× 시야의 2.5배 반경까지 박편을 채운다 (면적 6.25배)
+            const numGrains = Math.round((14 + Math.floor(Math.random() * 8)) * 6.25);
+            const attempts = [];
+
+            for (let i = 0; i < numGrains; i++) {
+                for (let t = 0; t < 60; t++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = Math.sqrt(Math.random()) * (FIELD_R - 30); // 면적에 고르게
+                    const gx = CX + Math.cos(angle) * dist;
+                    const gy = CY + Math.sin(angle) * dist;
+                    const size = 28 + Math.random() * 48;
+
+                    let overlaps = false;
+                    for (const g of attempts) {
+                        const dx = g.x - gx, dy = g.y - gy;
+                        if (Math.sqrt(dx * dx + dy * dy) < (g.size + size) * 0.38) {
+                            overlaps = true;
+                            break;
+                        }
+                    }
+                    if (overlaps) continue;
+
+                    const orientation = Math.random() * 180;
+                    // 단면 종류 — longCleavage가 있는 광물(각섬석·휘석)만 기저/세로 단면을 나눈다
+                    const section = mineral.longCleavage ? (Math.random() < 0.35 ? 'basal' : 'long') : null;
+                    const vertices = generateCrystalShape(mineral, size, section);
+                    const bireFactor = 0.55 + Math.random() * 0.45; // 단면 방향에 따라 Δn이 최대값 이하로만 나옴
+
+                    // 쌍정 데이터 (사장석 알바이트 쌍정)
+                    let twinData = null;
+                    if (mineral.twinning === 'albite') {
+                        // 각 그레인마다 고유한 쌍정 방향 (라멜라가 달리는 각도)
+                        const twinDirection = Math.random() * Math.PI; // 0~180°
+                        // 라멜라 개수 (폭 변화를 위해 경계 위치를 직접 지정)
+                        const numBands = 6 + Math.floor(Math.random() * 8);
+                        const boundaries = [0]; // 0~1 사이 정규화된 경계 위치
+                        for (let bi = 1; bi < numBands; bi++) {
+                            // 불규칙한 간격 (하지만 대체로 균등)
+                            const base = bi / numBands;
+                            const jitter = (Math.random() - 0.5) * 0.4 / numBands;
+                            boundaries.push(Math.max(boundaries[bi-1] + 0.02, Math.min(0.98, base + jitter)));
+                        }
+                        boundaries.push(1);
+                        twinData = {
+                            direction: twinDirection,
+                            boundaries: boundaries,
+                            twinAngle: mineral.twinAngle, // 쌍정 간 결정학적 방향 차이
+                            // 각 쌍정 도메인의 복굴절률 미세 변동
+                            bireFactors: boundaries.slice(0, -1).map(() => 0.9 + Math.random() * 0.1)
+                        };
+                    }
+
+                    // 소광 하위구역 (파동소광·얼룩소광)
+                    let subzones = null;
+                    if (mineral.extinctionType === 'undulatory') {
+                        // 방사형 부채꼴 조각 — 조각마다 소광 위상이 조금씩 어긋나 물결무늬 소광
+                        subzones = [];
+                        const zn = 6;
+                        const a0 = Math.random() * Math.PI * 2;
+                        for (let zi = 0; zi < zn; zi++) {
+                            subzones.push({
+                                kind: 'wedge',
+                                a0: a0 + (zi / zn) * Math.PI * 2,
+                                a1: a0 + ((zi + 1) / zn) * Math.PI * 2,
+                                phaseOffset: (Math.random() - 0.5) * 14 // ±7°
+                            });
+                        }
+                    } else if (mineral.extinctionType === 'mottled') {
+                        // 얼룩 패치 — 타원 여러 개, 각각 소광 위상이 다름
+                        subzones = [];
+                        const zn = 4 + Math.floor(Math.random() * 2);
+                        for (let zi = 0; zi < zn; zi++) {
+                            const za = Math.random() * Math.PI * 2;
+                            const zd = Math.random() * size * 0.5;
+                            subzones.push({
+                                kind: 'blob',
+                                x: Math.cos(za) * zd * 1.4, y: Math.sin(za) * zd,
+                                rx: size * (0.25 + Math.random() * 0.2),
+                                ry: size * (0.18 + Math.random() * 0.15),
+                                phaseOffset: (Math.random() - 0.5) * 20 // ±10°
+                            });
+                        }
+                    }
+
+                    // 변질(뿌연 표면) 패치 — 정장석 등
+                    let alterPatches = null;
+                    if (mineral.alteration > 0) {
+                        alterPatches = [];
+                        const pn = Math.round(14 + mineral.alteration * 14);
+                        for (let pi = 0; pi < pn; pi++) {
+                            const pa = Math.random() * Math.PI * 2;
+                            const pd = Math.random() * size * 0.75;
+                            alterPatches.push({
+                                x: Math.cos(pa) * pd * 1.4, y: Math.sin(pa) * pd,
+                                r: 1.5 + Math.random() * size * 0.18,
+                                alpha: 0.05 + Math.random() * 0.10 * mineral.alteration
+                            });
+                        }
+                    }
+
+                    const grain = {
+                        x: gx, y: gy, size, orientation,
+                        vertices, bireFactor,
+                        thickness: 29 + Math.random() * 2,
+                        section,
+                        // 단면별 벽개·소광각: 기저 단면은 대칭 소광(0°), 세로 단면은 1방향 벽개
+                        cleavageAngles: section === 'basal' ? mineral.cleavageAngles
+                            : section === 'long' ? mineral.longCleavage
+                            : mineral.cleavageAngles,
+                        extAngle: section === 'basal' ? 0 : mineral.extinctionAngle,
+                        twinData, subzones, alterPatches,
+                        cleavageSpacing: 4.5 + Math.random() * 2.5 // 벽개 간격 고정 (렌더마다 안 바뀌게)
+                    };
+                    grains.push(grain);
+                    attempts.push(grain);
+                    break;
+                }
+            }
+        }
+
+        function generateCrystalShape(mineral, size, section) {
+            const verts = [];
+            let numSides;
+            if (section === 'long') {
+                numSides = 4 + Math.floor(Math.random() * 3); // 세로 단면: 길쭉한 4~6각형
+            } else if (section === 'basal') {
+                numSides = mineral.id === 'augite' ? 8 : 6; // 기저 단면: 각섬석 6각형, 휘석 8각형
+            } else {
+                switch (mineral.crystalSystem) {
+                    case 'hexagonal': numSides = 6; break;
+                    case 'cubic': numSides = 6 + Math.floor(Math.random() * 2); break; // 등축계: 다각형 자형
+                    case 'orthorhombic': numSides = 4 + Math.floor(Math.random() * 2); break;
+                    case 'monoclinic': numSides = 4 + Math.floor(Math.random() * 3); break;
+                    case 'triclinic': numSides = 4 + Math.floor(Math.random() * 2); break;
+                    default: numSides = 5 + Math.floor(Math.random() * 3);
+                }
+            }
+            const baseAngle = Math.random() * Math.PI * 2;
+            for (let i = 0; i < numSides; i++) {
+                const a = baseAngle + (i / numSides) * Math.PI * 2;
+                // 등축계·기저 단면은 규칙적인 다각형에 가깝게 (반지름 변동 폭 축소)
+                const rVar = section === 'basal' ? 0.88 + Math.random() * 0.12
+                    : mineral.crystalSystem === 'cubic' ? 0.85 + Math.random() * 0.15 : 0.6 + Math.random() * 0.4;
+                const r = size * rVar;
+                const elongation = section === 'long' ? 2.0
+                    : section === 'basal' ? 1.0
+                    : (mineral.id === 'biotite' || mineral.id === 'muscovite') ? 1.8
+                    : (mineral.id === 'plagioclase') ? 1.5
+                    : (mineral.id === 'garnet') ? 1.0
+                    : (mineral.id === 'calcite') ? 1.3 : 1.2;
+                verts.push([Math.cos(a) * r * elongation, Math.sin(a) * r]);
+            }
+            return verts;
+        }
+
+        // ===== Michel-Lévy 간섭색 계산 =====
+        function xFit(wave) {
+            const t1 = (wave - 442.0) * ((wave < 442.0) ? 0.0624 : 0.0374);
+            const t2 = (wave - 599.8) * ((wave < 599.8) ? 0.0264 : 0.0323);
+            const t3 = (wave - 501.1) * ((wave < 501.1) ? 0.0490 : 0.0382);
+            return 0.362 * Math.exp(-0.5 * t1 * t1) + 1.056 * Math.exp(-0.5 * t2 * t2)
+                - 0.065 * Math.exp(-0.5 * t3 * t3);
+        }
+
+        function yFit(wave) {
+            const t1 = (wave - 568.8) * ((wave < 568.8) ? 0.0213 : 0.0247);
+            const t2 = (wave - 530.9) * ((wave < 530.9) ? 0.0613 : 0.0322);
+            return 0.821 * Math.exp(-0.5 * t1 * t1) + 0.286 * Math.exp(-0.5 * t2 * t2);
+        }
+
+        function zFit(wave) {
+            const t1 = (wave - 437.0) * ((wave < 437.0) ? 0.0845 : 0.0278);
+            const t2 = (wave - 459.0) * ((wave < 459.0) ? 0.0385 : 0.0725);
+            return 1.217 * Math.exp(-0.5 * t1 * t1) + 0.681 * Math.exp(-0.5 * t2 * t2);
+        }
+
+        // 간섭색 LUT — 10nm 간격으로 계산(600개), 사이는 선형 보간
+        // 6000nm까지 확장: 방해석 같은 고복굴절 광물의 고차 백색 표현용
+        const LUT_STEP = 10;
+        const LUT_MAX = 6000;
+        const LUT_N = LUT_MAX / LUT_STEP + 1; // 601
+        const interferenceColorLUT = new Array(LUT_N);
+
+        // 등색함수 표 (380~780nm, 10nm 간격) — 매번 다시 계산하지 않도록 미리 저장
+        const WAVES = [], XB = [], YB = [], ZB = [];
+        for (let lambda = 380; lambda <= 780; lambda += 10) {
+            WAVES.push(lambda); XB.push(xFit(lambda)); YB.push(yFit(lambda)); ZB.push(zFit(lambda));
+        }
+
+        function calcOneRetardation(R) {
+            return spectrumToRGB(i => Math.sin(Math.PI * R / WAVES[i]) ** 2);
+        }
+
+        // 파장별 투과 세기 함수(intensityAt(i), i = WAVES 인덱스) → sRGB
+        function spectrumToRGB(intensityAt) {
+            let X = 0, Y = 0, Z = 0;
+            for (let i = 0; i < WAVES.length; i++) {
+                const power = intensityAt(i);
+                X += power * XB[i];
+                Y += power * YB[i];
+                Z += power * ZB[i];
+            }
+            let r = 3.2406*X - 1.5372*Y - 0.4986*Z;
+            let g = -0.9689*X + 1.8758*Y + 0.0415*Z;
+            let b = 0.0557*X - 0.2040*Y + 1.0570*Z;
+            const mx = Math.max(r, g, b, 1);
+            r /= mx; g /= mx; b /= mx;
+            const gc = v => v > 0.0031308 ? 1.055*Math.pow(Math.max(0,v),1/2.4)-0.055 : 12.92*Math.max(0,v);
+            return [
+                Math.max(0, Math.min(255, Math.round(gc(r)*255))),
+                Math.max(0, Math.min(255, Math.round(gc(g)*255))),
+                Math.max(0, Math.min(255, Math.round(gc(b)*255)))
+            ];
+        }
+
+        function buildLUT() {
+            for (let i = 0; i < LUT_N; i++) {
+                interferenceColorLUT[i] = calcOneRetardation(i * LUT_STEP);
+            }
+        }
+        buildLUT();
+
+        function retardationToRGB(retardation) {
+            const clamped = Math.max(0, Math.min(LUT_MAX, retardation));
+            const fi = clamped / LUT_STEP;
+            const i0 = Math.floor(fi);
+            const i1 = Math.min(i0 + 1, LUT_N - 1);
+            const t = fi - i0;
+            const c0 = interferenceColorLUT[i0];
+            const c1 = interferenceColorLUT[i1];
+            return [
+                Math.round(c0[0] + (c1[0] - c0[0]) * t),
+                Math.round(c0[1] + (c1[1] - c0[1]) * t),
+                Math.round(c0[2] + (c1[2] - c0[2]) * t)
+            ];
+        }
+
+        // 직교니콜 + 보상기: 광물판(경로차 Rg, 진동방향 thetaG)과 보상기(경로차 Rc, 느린 방향 = 화면 북동-남서, 호출 시 각도 부호 반전)를
+        // 차례로 통과한 빛의 세기를 파장마다 계산(존스 행렬). 광물이 소광 위치(thetaG=0)면 보상기 색 그대로,
+        // 보상기와 평행(45°)이면 경로차가 더해지고(가산), 수직(135°)이면 빼진다(감산).
+        function compensatedRGB(Rg, thetaG, Rc) {
+            const s2 = Math.sin(2 * thetaG), c2 = Math.cos(2 * thetaG);
+            return spectrumToRGB(i => {
+                const hg = Math.PI * Rg / WAVES[i], hc = Math.PI * Rc / WAVES[i]; // 위상차의 절반
+                const Sg = Math.sin(hg), Cg = Math.cos(hg), Sc = Math.sin(hc), Cc = Math.cos(hc);
+                const re = Sc * Sg * c2;
+                const im = Sc * Cg + Cc * Sg * s2;
+                return re * re + im * im;
+            });
+        }
+
+        function getInterferenceOrder(retardation) {
+            if (retardation >= 3000) return '고차 백색';
+            if (retardation < 550) return '1차';
+            if (retardation < 1100) return '2차';
+            if (retardation < 1650) return '3차';
+            return `${Math.floor(retardation / 550) + 1}차`;
+        }
+
+        // ===== 그레인 색상 계산 =====
+        // phaseOffset: 파동소광·얼룩소광 하위구역의 소광 위상 어긋남(°)
+        function calculateGrainColor(grain, mineral, mode, stageAngle, phaseOffset = 0) {
+            const stageRad = stageAngle * Math.PI / 180;
+            const orientRad = grain.orientation * Math.PI / 180;
+            const mineralAngle = orientRad + stageRad;
+            const lf = getLightFactor();
+
+            if (mode === 'ppl') {
+                // PPL: 다색성만 (보상기는 분석기가 없으므로 효과 없음)
+                const pplAngle = mineralAngle % Math.PI;
+                const f = Math.cos(pplAngle) * Math.cos(pplAngle);
+                return {
+                    r: Math.min(255, Math.round((mineral.colorA[0] * f + mineral.colorB[0] * (1 - f)) * lf)),
+                    g: Math.min(255, Math.round((mineral.colorA[1] * f + mineral.colorB[1] * (1 - f)) * lf)),
+                    b: Math.min(255, Math.round((mineral.colorA[2] * f + mineral.colorB[2] * (1 - f)) * lf))
+                };
+            } else {
+                // 등방성 광물(석류석 등): 어느 방향에서도 완전 소광
+                if (mineral.opticType === 'isotropic') {
+                    // 빛이 갈라지지 않으므로 보상기만 있는 것과 같음 (보상기 없으면 검정)
+                    const isoR = getCompensatorR();
+                    if (isoR > 0) {
+                        const c = retardationToRGB(isoR);
+                        return {
+                            r: Math.max(0, Math.min(255, Math.round(c[0] * lf))),
+                            g: Math.max(0, Math.min(255, Math.round(c[1] * lf))),
+                            b: Math.max(0, Math.min(255, Math.round(c[2] * lf)))
+                        };
+                    }
+                    return { r: 0, g: 0, b: 0 };
+                }
+
+                // XPL: 간섭색 + 소광 (사소광은 소광각만큼 위상 이동, 그레인 단면의 소광각 우선)
+                const effAngle = mineralAngle - (((grain.extAngle ?? mineral.extinctionAngle) + phaseOffset) * Math.PI / 180);
+                const extinction = Math.sin(2 * effAngle);
+                const ext2 = extinction * extinction;
+
+                const retardation = mineral.birefringence * grain.bireFactor * grain.thickness * 1000;
+
+                // 보상기 삽입: 광물판 + 보상기를 함께 계산 (소광 위치여도 검정이 아니라 보상기 색)
+                const compR = getCompensatorR();
+                if (compR > 0) {
+                    const c = compensatedRGB(retardation, -effAngle, compR);
+                    return {
+                        r: Math.max(0, Math.min(255, Math.round(c[0] * lf))),
+                        g: Math.max(0, Math.min(255, Math.round(c[1] * lf))),
+                        b: Math.max(0, Math.min(255, Math.round(c[2] * lf)))
+                    };
+                }
+                const rgb = retardationToRGB(retardation);
+
+                // 강한 다색성 광물: 고유색이 간섭색에 영향 (비정상 간섭색)
+                let r = rgb[0] * ext2;
+                let g = rgb[1] * ext2;
+                let b = rgb[2] * ext2;
+
+                if (mineral.pleochroismStrength > 0.5) {
+                    const tint = mineral.pleochroismStrength * 0.25;
+                    const pplAngle = mineralAngle % Math.PI;
+                    const f = Math.cos(pplAngle) * Math.cos(pplAngle);
+                    const pr = mineral.colorA[0] * f + mineral.colorB[0] * (1 - f);
+                    const pg = mineral.colorA[1] * f + mineral.colorB[1] * (1 - f);
+                    const pb = mineral.colorA[2] * f + mineral.colorB[2] * (1 - f);
+                    r = r * (1 - tint) + pr * tint * ext2 * 0.5;
+                    g = g * (1 - tint) + pg * tint * ext2 * 0.5;
+                    b = b * (1 - tint) + pb * tint * ext2 * 0.5;
+                }
+
+                return {
+                    r: Math.max(0, Math.min(255, Math.round(r * lf))),
+                    g: Math.max(0, Math.min(255, Math.round(g * lf))),
+                    b: Math.max(0, Math.min(255, Math.round(b * lf)))
+                };
+            }
+        }
+
+        // ===== 코노스코프 (버틀랜드 렌즈) 렌더링 =====
+        // 오프스크린 캔버스 (코노스코프 저해상도 계산용)
+        const cono = document.createElement('canvas');
+        const CSCALE = 2; // 다운샘플 비율
+        cono.width = Math.ceil(W / CSCALE);
+        cono.height = Math.ceil(H / CSCALE);
+        const conoCtx = cono.getContext('2d');
+
+        function renderConoscopic(mineral, stageAngle) {
+            // 등방성 광물: 간섭상이 형성되지 않음 (시야 전체 소광)
+            if (mineral.opticType === 'isotropic') {
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, W, H);
+                // 보상기가 있으면 원 전체가 보상기 색 (빛이 갈라지지 않음)
+                const isoR = getCompensatorR();
+                if (isoR > 0) {
+                    const c = retardationToRGB(isoR);
+                    ctx.fillStyle = `rgb(${Math.round(c[0])}, ${Math.round(c[1])}, ${Math.round(c[2])})`;
+                    ctx.beginPath();
+                    ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                return;
+            }
+            // 보상기 경로차는 한 번만 읽는다 (픽셀마다 DOM을 읽지 않게). 쐐기는 20nm 단위로 반올림
+            let compR = getCompensatorR();
+            if (document.getElementById('comp-select').value === 'wedge' && compR > 0) compR = Math.max(20, Math.round(compR / 20) * 20);
+
+            const sw = cono.width, sh = cono.height;
+            const scx = CX / CSCALE, scy = CY / CSCALE;
+            const smaxR = RADIUS / CSCALE;
+            const imageData = conoCtx.createImageData(sw, sh);
+            const data = imageData.data;
+            const stageRad = stageAngle * Math.PI / 180;
+
+            if (mineral.opticType === 'uniaxial') {
+                renderUniaxialFigure(data, mineral, stageRad, sw, sh, scx, scy, smaxR, compR);
+            } else {
+                renderBiaxialFigure(data, mineral, stageRad, sw, sh, scx, scy, smaxR, compR);
+            }
+
+            conoCtx.putImageData(imageData, 0, 0);
+            // 저해상도 결과를 원본 캔버스에 확대
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'medium';
+            ctx.drawImage(cono, 0, 0, W, H);
+        }
+
+        // 보상기 경로차 표: R 0~6000nm(10nm) x θ 0~180°(2°)의 RGB (보상기 경로차가 바뀔 때만 재생성)
+        const compLUTCache = new Map(); // 보상기 경로차 → 표 (최근 4개 보관)
+        const CLUT_NR = 601, CLUT_NT = 90;
+        function buildCompLUT(Rc) {
+            const lut = new Uint8ClampedArray(CLUT_NR * CLUT_NT * 3);
+            for (let ri = 0; ri < CLUT_NR; ri++) {
+                for (let ti = 0; ti < CLUT_NT; ti++) {
+                    const c = compensatedRGB(ri * 10, ti * 2 * Math.PI / 180, Rc);
+                    const k = (ri * CLUT_NT + ti) * 3;
+                    lut[k] = c[0]; lut[k + 1] = c[1]; lut[k + 2] = c[2];
+                }
+            }
+            return lut;
+        }
+        function getCompLUT(Rc) {
+            let lut = compLUTCache.get(Rc);
+            if (lut) { compLUTCache.delete(Rc); compLUTCache.set(Rc, lut); return lut; } // 최근 사용으로 갱신
+            lut = buildCompLUT(Rc);
+            compLUTCache.set(Rc, lut);
+            if (compLUTCache.size > 4) compLUTCache.delete(compLUTCache.keys().next().value);
+            return lut;
+        }
+        // 표 조회: 가장 가까운 칸, θ는 mod π로 접음
+        function compLUTLookup(compLUT, R, theta) {
+            const ri = Math.max(0, Math.min(CLUT_NR - 1, Math.round(R / 10)));
+            let t = theta % Math.PI; if (t < 0) t += Math.PI;
+            const ti = Math.round(t / (2 * Math.PI / 180)) % CLUT_NT;
+            const k = (ri * CLUT_NT + ti) * 3;
+            return [compLUT[k], compLUT[k + 1], compLUT[k + 2]];
+        }
+
+        // 한 점의 코노스코프 색: 진동 방향 psi, 경로차 R, 광학부호 sign
+        function conoPixel(psi, R, sign, vignette, out, compR) {
+            let r, g, b;
+            if (compR > 0) {
+                const lut = getCompLUT(compR);
+                const thetaS = sign === '-' ? psi + Math.PI / 2 : psi; // 느린 방향
+                const c = compLUTLookup(lut, R, -thetaS);
+                r = c[0]; g = c[1]; b = c[2];
+            } else {
+                const rgb = retardationToRGB(R);
+                const B = Math.sin(2 * psi) ** 2;
+                r = rgb[0] * B; g = rgb[1] * B; b = rgb[2] * B;
+            }
+            out[0] = Math.min(255, r * vignette);
+            out[1] = Math.min(255, g * vignette);
+            out[2] = Math.min(255, b * vignette);
+        }
+
+        function renderUniaxialFigure(data, mineral, stageRad, sw, sh, scx, scy, smaxR, compR) {
+            const bire = mineral.birefringence;
+            const px3 = [0, 0, 0];
+
+            for (let py = 0; py < sh; py++) {
+                for (let px = 0; px < sw; px++) {
+                    const dx = px - scx;
+                    const dy = py - scy;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > smaxR) continue;
+
+                    const idx = (py * sw + px) * 4;
+                    const normR = dist / smaxR;
+                    // 진동 방향 = 방사 방향 (재물대 각도와 무관 — 십자는 제자리)
+                    const psi = Math.atan2(dy, dx);
+                    const R = bire * 30 * 1000 * 6 * normR * normR;
+                    const vignette = 1 - Math.pow(normR, 4) * 0.3;
+                    conoPixel(psi, R, mineral.opticSign, vignette, px3, compR);
+
+                    data[idx]     = px3[0];
+                    data[idx + 1] = px3[1];
+                    data[idx + 2] = px3[2];
+                    data[idx + 3] = 255;
+                }
+            }
+        }
+
+        function renderBiaxialFigure(data, mineral, stageRad, sw, sh, scx, scy, smaxR, compR) {
+            const bire = mineral.birefringence;
+            const twoVRad = mineral.twoV * Math.PI / 180;
+            const melatopeSpacing = Math.sin(twoVRad / 2) * smaxR * 0.7;
+            const cosS = Math.cos(stageRad), sinS = Math.sin(stageRad);
+            const px3 = [0, 0, 0];
+
+            for (let py = 0; py < sh; py++) {
+                for (let px = 0; px < sw; px++) {
+                    const dx = px - scx;
+                    const dy = py - scy;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > smaxR) continue;
+
+                    const idx = (py * sw + px) * 4;
+                    const rdx = dx * cosS + dy * sinS;
+                    const rdy = -dx * sinS + dy * cosS;
+
+                    // 두 멜라토프(-s,0), (+s,0)까지의 거리·방위각
+                    const d1 = Math.hypot(rdx + melatopeSpacing, rdy);
+                    const d2 = Math.hypot(rdx - melatopeSpacing, rdy);
+                    const phi1 = Math.atan2(rdy, rdx + melatopeSpacing);
+                    const phi2 = Math.atan2(rdy, rdx - melatopeSpacing);
+                    // 비오-프레넬: 진동 방향 = 두 방위각의 평균 (재물대 좌표 -> 캔버스 각도)
+                    const psi = (phi1 + phi2) / 2 + stageRad;
+                    const R = bire * 30 * 1000 * 6 * (d1 * d2) / (smaxR * smaxR);
+
+                    const normR = dist / smaxR;
+                    const vignette = 1 - Math.pow(normR, 4) * 0.3;
+                    conoPixel(psi, R, mineral.opticSign, vignette, px3, compR);
+
+                    data[idx]     = px3[0];
+                    data[idx + 1] = px3[1];
+                    data[idx + 2] = px3[2];
+                    data[idx + 3] = 255;
+                }
+            }
+        }
+
+        // ===== 렌더링 =====
+        function render() {
+            const mineralIdx = parseInt(mineralSelect.value);
+            const mineral = minerals[mineralIdx];
+            const stageAngle = parseFloat(stageSlider.value);
+
+            ctx.clearRect(0, 0, W, H);
+
+            if (currentMode === 'bertrand') {
+                // 버틀랜드 렌즈: 코노스코프 관찰
+                renderConoscopic(mineral, stageAngle);
+                const conoLowMag = parseInt(document.getElementById('obj-select').value) !== 40;
+                if (conoLowMag && mineral.opticType !== 'isotropic') {
+                    // 저배율: 간섭상 밝기 0.55배 (검은 막을 덮어 어둡게)
+                    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+                    ctx.fillRect(0, 0, W, H);
+                }
+
+                // 원형 마스크 (외부 검정)
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-in';
+                ctx.beginPath();
+                ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+
+                // 40x가 아니면 배율 안내 띠
+                if (conoLowMag) {
+                    ctx.save();
+                    // 원 안에 들어가도록 두 줄로 나눠 씀 (같은 문장)
+                    // 화면에서 캔버스가 줄어 보이면(휴대폰) 글자·띠를 그만큼 키움
+                    const bk = (canvas.clientWidth && canvas.clientWidth < canvas.width) ? Math.min(1.45, canvas.width / canvas.clientWidth) : 1;
+                    const bandY = CY + RADIUS - 40 - 45 * (bk - 1);
+                    ctx.font = (13 * bk) + 'px sans-serif';
+                    const bw = bk > 1 ? Math.max(250, ctx.measureText('저배율에서는 간섭상이 작고 흐립니다').width + 16) : 250;
+                    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+                    ctx.fillRect(CX - bw / 2, bandY - 28 * bk, bw, 38 * bk);
+                    ctx.fillStyle = '#fff';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('고배율(40×)에서 관찰하세요 —', CX, bandY - 18 * bk);
+                    ctx.fillText('저배율에서는 간섭상이 작고 흐립니다', CX, bandY - 1 * bk + (bk - 1) * 4);
+                    ctx.restore();
+                }
+            } else {
+                // 정규 관찰 (PPL / XPL)
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2);
+                ctx.clip();
+
+                // 배경 (조명 밝기 반영; XPL에서 보상기 삽입 시 배경은 보상기 간섭색)
+                const lf2 = getLightFactor();
+                if (currentMode === 'ppl') {
+                    const v = Math.min(255, Math.round(225 * lf2));
+                    ctx.fillStyle = `rgb(${v}, ${v}, ${Math.min(255, v + 3)})`;
+                } else {
+                    const compR = getCompensatorR();
+                    if (compR > 0) {
+                        const c = retardationToRGB(compR);
+                        ctx.fillStyle = `rgb(${Math.round(c[0] * lf2)}, ${Math.round(c[1] * lf2)}, ${Math.round(c[2] * lf2)})`;
+                    } else {
+                        const v = Math.round(5 * lf2);
+                        ctx.fillStyle = `rgb(${v}, ${v}, ${Math.min(255, v + 3)})`;
+                    }
+                }
+                ctx.fillRect(0, 0, W, H);
+
+                // 재물대 전체 회전 + 대물렌즈 배율 (10× 기준)
+                const zoom = parseInt(document.getElementById('obj-select').value) / 10;
+                // 보상기 색 배경 위에서는 반투명이면 배경색과 섞여 가산·감산이 흐려지므로 거의 불투명하게
+                const alphaBase = (currentMode === 'xpl' && getCompensatorR() > 0)
+                    ? Math.max(mineral.opacity, 0.85) : mineral.opacity;
+                ctx.save();
+                ctx.translate(CX, CY);
+                ctx.scale(zoom, zoom);
+                ctx.rotate(stageAngle * Math.PI / 180);
+                ctx.translate(-CX, -CY);
+
+                const viewR = RADIUS / zoom; // 현재 배율에서 보이는 박편 반경
+                grains.forEach(grain => {
+                    if (Math.hypot(grain.x - CX, grain.y - CY) > viewR + grain.size * 2) return; // 시야 밖 생략
+                    ctx.save();
+                    ctx.translate(grain.x, grain.y);
+                    ctx.rotate(grain.orientation * Math.PI / 180);
+
+                    // 결정 윤곽 경로 함수
+                    function tracePath() {
+                        ctx.beginPath();
+                        ctx.moveTo(grain.vertices[0][0], grain.vertices[0][1]);
+                        for (let i = 1; i < grain.vertices.length; i++) {
+                            ctx.lineTo(grain.vertices[i][0], grain.vertices[i][1]);
+                        }
+                        ctx.closePath();
+                    }
+
+                    if (grain.twinData) {
+                        // === 알바이트 쌍정 렌더링 ===
+                        const td = grain.twinData;
+                        const dir = td.direction; // 쌍정 라멜라 방향
+                        const cosD = Math.cos(dir), sinD = Math.sin(dir);
+
+                        // 바운딩 박스 (쌍정 방향 좌표계로 투영)
+                        let minProj = Infinity, maxProj = -Infinity;
+                        let minPerp = Infinity, maxPerp = -Infinity;
+                        grain.vertices.forEach(v => {
+                            // 쌍정 방향에 수직인 축으로 투영
+                            const proj = v[0] * (-sinD) + v[1] * cosD;
+                            const perp = v[0] * cosD + v[1] * sinD;
+                            minProj = Math.min(minProj, proj);
+                            maxProj = Math.max(maxProj, proj);
+                            minPerp = Math.min(minPerp, perp);
+                            maxPerp = Math.max(maxPerp, perp);
+                        });
+                        const projRange = maxProj - minProj;
+                        const perpLen = maxPerp - minPerp;
+
+                        // 클리핑
+                        tracePath();
+                        ctx.save();
+                        ctx.clip();
+
+                        // 각 쌍정 밴드 렌더링
+                        const pad = 4; // 라멜라 길이 여백
+                        for (let bi = 0; bi < td.boundaries.length - 1; bi++) {
+                            const b0 = td.boundaries[bi];
+                            const b1 = td.boundaries[bi + 1];
+                            const isTwinned = (bi % 2 === 1);
+
+                            // 이 밴드의 결정학적 방향
+                            const orientOffset = isTwinned ? td.twinAngle : 0;
+                            const virtualGrain = {
+                                ...grain,
+                                orientation: grain.orientation + orientOffset,
+                                bireFactor: grain.bireFactor * td.bireFactors[bi]
+                            };
+                            const color = calculateGrainColor(virtualGrain, mineral, currentMode, stageAngle);
+
+                            // 밴드 사각형 (쌍정 방향 좌표계)
+                            const p0 = minProj + b0 * projRange;
+                            const p1 = minProj + b1 * projRange;
+                            const corners = [
+                                [p0 * (-sinD) + (minPerp - pad) * cosD, p0 * cosD + (minPerp - pad) * sinD],
+                                [p1 * (-sinD) + (minPerp - pad) * cosD, p1 * cosD + (minPerp - pad) * sinD],
+                                [p1 * (-sinD) + (maxPerp + pad) * cosD, p1 * cosD + (maxPerp + pad) * sinD],
+                                [p0 * (-sinD) + (maxPerp + pad) * cosD, p0 * cosD + (maxPerp + pad) * sinD],
+                            ];
+
+                            ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${alphaBase + 0.15})`;
+                            ctx.beginPath();
+                            ctx.moveTo(corners[0][0], corners[0][1]);
+                            ctx.lineTo(corners[1][0], corners[1][1]);
+                            ctx.lineTo(corners[2][0], corners[2][1]);
+                            ctx.lineTo(corners[3][0], corners[3][1]);
+                            ctx.closePath();
+                            ctx.fill();
+                        }
+
+                        // 쌍정 경계선 (날카로운 평행선)
+                        ctx.strokeStyle = currentMode === 'xpl'
+                            ? 'rgba(0, 0, 0, 0.2)'
+                            : 'rgba(0, 0, 0, 0.06)';
+                        ctx.lineWidth = currentMode === 'xpl' ? 0.6 : 0.3;
+                        for (let bi = 1; bi < td.boundaries.length - 1; bi++) {
+                            const p = minProj + td.boundaries[bi] * projRange;
+                            const x1 = p * (-sinD) + (minPerp - pad) * cosD;
+                            const y1 = p * cosD + (minPerp - pad) * sinD;
+                            const x2 = p * (-sinD) + (maxPerp + pad) * cosD;
+                            const y2 = p * cosD + (maxPerp + pad) * sinD;
+                            ctx.beginPath();
+                            ctx.moveTo(x1, y1);
+                            ctx.lineTo(x2, y2);
+                            ctx.stroke();
+                        }
+
+                        ctx.restore(); // 클리핑 해제
+
+                    } else {
+                        // 일반 그레인 (쌍정 없음)
+                        tracePath();
+                        const color = calculateGrainColor(grain, mineral, currentMode, stageAngle);
+                        ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${alphaBase})`;
+                        ctx.fill();
+
+                        // 소광 하위구역 (파동소광·얼룩소광) — XPL에서만 표현
+                        if (grain.subzones && currentMode !== 'ppl') {
+                            ctx.save();
+                            tracePath();
+                            ctx.clip();
+                            // 얼룩 경계를 흐리게 (자연스러운 얼룩소광)
+                            const hasBlob = grain.subzones.some(z => z.kind === 'blob');
+                            if (hasBlob && typeof ctx.filter !== 'undefined') ctx.filter = 'blur(4px)';
+                            for (const z of grain.subzones) {
+                                const zc = calculateGrainColor(grain, mineral, currentMode, stageAngle, z.phaseOffset);
+                                ctx.fillStyle = `rgba(${zc.r}, ${zc.g}, ${zc.b}, ${alphaBase})`;
+                                ctx.beginPath();
+                                if (z.kind === 'wedge') {
+                                    ctx.moveTo(0, 0);
+                                    ctx.arc(0, 0, grain.size * 2.2, z.a0, z.a1);
+                                    ctx.closePath();
+                                } else { // blob (얼룩)
+                                    ctx.ellipse(z.x, z.y, z.rx, z.ry, 0, 0, Math.PI * 2);
+                                }
+                                ctx.fill();
+                            }
+                            ctx.filter = 'none';
+                            ctx.restore();
+                        }
+
+                        // 변질(뿌연 표면) 패치 — 정장석 등
+                        if (grain.alterPatches) {
+                            ctx.save();
+                            tracePath();
+                            ctx.clip();
+                            for (const p of grain.alterPatches) {
+                                ctx.fillStyle = `rgba(250, 248, 240, ${p.alpha})`;
+                                ctx.beginPath();
+                                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                            ctx.restore();
+                        }
+                    }
+
+                    // 외곽선 — PPL에서는 렐리프(굴절률 차)에 따라 진하기·두께 변화
+                    tracePath();
+                    if (currentMode === 'ppl') {
+                        const rel = mineral.relief ?? 0.3;
+                        ctx.strokeStyle = `rgba(35, 28, 18, ${0.12 + rel * 0.5})`;
+                        ctx.lineWidth = 0.5 + rel * 1.4;
+                        if (rel > 0.5) {
+                            ctx.shadowColor = 'rgba(60, 50, 30, 0.35)';
+                            ctx.shadowBlur = 2 + rel * 5;
+                        }
+                        ctx.stroke();
+                        ctx.shadowBlur = 0;
+                    } else {
+                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.18)';
+                        ctx.lineWidth = 0.6;
+                        ctx.stroke();
+                    }
+
+                    if (grain.cleavageAngles || mineral.cleavageAngles) {
+                        // 벽개선은 알갱이 외곽 안쪽으로만 그린다
+                        ctx.save();
+                        tracePath();
+                        ctx.clip();
+                        drawCleavage(grain, mineral);
+                        ctx.restore();
+                    }
+
+                    ctx.restore();
+                });
+
+                // 선택된 알갱이 강조 (노란 점선 외곽선) — 재물대 회전·배율 변환 안에서 다시 그림
+                if (selectedGrain && grains.includes(selectedGrain)) {
+                    ctx.save();
+                    ctx.translate(selectedGrain.x, selectedGrain.y);
+                    ctx.rotate(selectedGrain.orientation * Math.PI / 180);
+                    ctx.beginPath();
+                    ctx.moveTo(selectedGrain.vertices[0][0], selectedGrain.vertices[0][1]);
+                    for (let si = 1; si < selectedGrain.vertices.length; si++) {
+                        ctx.lineTo(selectedGrain.vertices[si][0], selectedGrain.vertices[si][1]);
+                    }
+                    ctx.closePath();
+                    ctx.strokeStyle = isLight() ? '#d99a00' : '#ffd84d';
+                    ctx.lineWidth = 2 / zoom;
+                    ctx.setLineDash([6 / zoom, 4 / zoom]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.restore();
+                }
+
+                ctx.restore(); // 재물대 회전
+                ctx.restore(); // 클리핑
+            }
+
+            // 원형 테두리
+            ctx.beginPath();
+            ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2);
+            ctx.strokeStyle = '#334';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // 십자선
+            drawCrosshair();
+
+            updateInfoPanel(mineral, stageAngle);
+            drawPolarizerDiagram();
+            drawMLChart(mineral);
+        }
+
+        function drawCleavage(grain, mineral) {
+            const angles = grain.cleavageAngles ?? mineral.cleavageAngles; // 그레인 단면의 벽개 우선
+            if (!angles) return;
+            // PPL에서는 벽개각을 읽을 수 있게 진하게, XPL은 기존 값 유지
+            ctx.strokeStyle = currentMode === 'ppl' ? 'rgba(0, 0, 0, 0.22)' : 'rgba(0, 0, 0, 0.08)';
+            ctx.lineWidth = currentMode === 'ppl' ? 0.6 : 0.3;
+
+            angles.forEach(ca => {
+                const caRad = ca * Math.PI / 180;
+                const spacing = grain.cleavageSpacing; // 그레인 생성 시 고정된 간격
+                for (let d = -grain.size; d < grain.size; d += spacing) {
+                    ctx.beginPath();
+                    ctx.moveTo(
+                        d * Math.cos(caRad + Math.PI / 2) - grain.size * Math.cos(caRad),
+                        d * Math.sin(caRad + Math.PI / 2) - grain.size * Math.sin(caRad)
+                    );
+                    ctx.lineTo(
+                        d * Math.cos(caRad + Math.PI / 2) + grain.size * Math.cos(caRad),
+                        d * Math.sin(caRad + Math.PI / 2) + grain.size * Math.sin(caRad)
+                    );
+                    ctx.stroke();
+                }
+            });
+        }
+
+        function drawCrosshair() {
+            ctx.save();
+            ctx.strokeStyle = currentMode === 'bertrand'
+                ? 'rgba(200, 200, 255, 0.25)'
+                : 'rgba(0, 0, 0, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([8, 4]);
+
+            ctx.beginPath();
+            ctx.moveTo(CX - RADIUS, CY);
+            ctx.lineTo(CX + RADIUS, CY);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(CX, CY - RADIUS);
+            ctx.lineTo(CX, CY + RADIUS);
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+            ctx.restore();
+        }
+
+        function drawPolarizerDiagram() {
+            const dw = diagCanvas.width, dh = diagCanvas.height;
+            diagCtx.clearRect(0, 0, dw, dh);
+            diagCtx.fillStyle = isLight() ? '#f7f8fb' : '#12122a';
+            diagCtx.fillRect(0, 0, dw, dh);
+
+            const isXPL = (currentMode === 'xpl' || currentMode === 'bertrand');
+
+            // 교차 중심은 항상 캔버스 정중앙
+            const len = 48;
+            const dcx = dw / 2;   // 130
+            const dcy = dh / 2;   // 75
+
+            // ── 화살표 그리기 헬퍼
+            function drawArrow(x1, y1, x2, y2, color) {
+                const angle = Math.atan2(y2 - y1, x2 - x1);
+                const hw = 5, hl = 10; // 화살촉 폭/길이
+                diagCtx.strokeStyle = color;
+                diagCtx.fillStyle = color;
+                diagCtx.lineWidth = 2.5;
+                diagCtx.beginPath();
+                diagCtx.moveTo(x1, y1);
+                diagCtx.lineTo(x2, y2);
+                diagCtx.stroke();
+                // 화살촉 (채움)
+                diagCtx.beginPath();
+                diagCtx.moveTo(x2, y2);
+                diagCtx.lineTo(x2 - hl * Math.cos(angle - 0.4), y2 - hl * Math.sin(angle - 0.4));
+                diagCtx.lineTo(x2 - hl * Math.cos(angle + 0.4), y2 - hl * Math.sin(angle + 0.4));
+                diagCtx.closePath();
+                diagCtx.fill();
+            }
+
+            // ── 하부편광판 (E-W 수평)
+            const pColor = isLight() ? '#8a6200' : '#ffcc55';
+            drawArrow(dcx - len, dcy, dcx + len, dcy, pColor);
+            // 라벨: 화살촉 바로 오른쪽 (좌측 정렬, 겹침 없음)
+            diagCtx.fillStyle = pColor;
+            diagCtx.font = '13px Malgun Gothic';
+            diagCtx.textAlign = 'left';
+            diagCtx.textBaseline = 'middle';
+            diagCtx.fillText('편광판 (P)', dcx + len + 6, dcy);
+
+            // ── 분석기 (N-S 수직) — XPL / Bertrand 모드만
+            if (isXPL) {
+                const aColor = isLight() ? '#2f5fd0' : '#88aaff';
+                drawArrow(dcx, dcy + len, dcx, dcy - len, aColor);
+                // 라벨: 화살촉 오른쪽, 충분히 이격
+                diagCtx.fillStyle = aColor;
+                diagCtx.font = '13px Malgun Gothic';
+                diagCtx.textAlign = 'left';
+                diagCtx.textBaseline = 'middle';
+                diagCtx.fillText('분석기 (A)', dcx + 8, dcy - len);
+            }
+
+            // ── 버틀랜드 렌즈: 교차점 중심에 점선 원 (광로 삽입 표시)
+            if (currentMode === 'bertrand') {
+                diagCtx.strokeStyle = isLight() ? '#1d7a58' : '#77ddbb';
+                diagCtx.lineWidth = 1.5;
+                diagCtx.setLineDash([3, 3]);
+                diagCtx.beginPath();
+                diagCtx.arc(dcx, dcy, 18, 0, Math.PI * 2);
+                diagCtx.stroke();
+                diagCtx.setLineDash([]);
+                // 라벨: 원 오른쪽, 편광판 텍스트 아래
+                diagCtx.fillStyle = isLight() ? '#1d7a58' : '#77ddbb';
+                diagCtx.font = '13px Malgun Gothic';
+                diagCtx.textAlign = 'left';
+                diagCtx.textBaseline = 'top';
+                diagCtx.fillText('Bertrand lens', dcx + 22, dcy + 22);
+            }
+
+            // ── PPL 안내
+            if (currentMode === 'ppl') {
+                diagCtx.fillStyle = isLight() ? '#8a6200' : 'rgba(255, 210, 80, 0.9)';
+                diagCtx.font = '13px Malgun Gothic';
+                diagCtx.textAlign = 'center';
+                diagCtx.textBaseline = 'alphabetic';
+                diagCtx.fillText('분석기 제거됨', dw / 2, dh - 8);
+            }
+
+            diagCtx.textBaseline = 'alphabetic';
+        }
+
+        // ===== 미셀레비 간섭색 차트 =====
+        const mlCanvas = document.getElementById('ml-chart');
+        const mlCtx = mlCanvas.getContext('2d');
+
+        // 동정 모드에서 숫자·표시를 숨길지 (D2에서 동정 모드 상태를 돌려주도록 바뀜)
+        function quizHideNumbers() { return quizMode; }
+
+        function drawMLChart(mineral) {
+            const mw = mlCanvas.width; // 260
+            const MAXR = 1800;         // 차트 범위 (nm)
+            const bandY0 = 14, bandY1 = 44; // 색 띠 위치
+            const xOf = r => r / MAXR * mw;
+
+            mlCtx.clearRect(0, 0, mw, mlCanvas.height);
+
+            // 간섭색 띠 — 각 열을 해당 경로차의 간섭색으로
+            for (let x = 0; x < mw; x++) {
+                const c = retardationToRGB(x / mw * MAXR);
+                mlCtx.fillStyle = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+                mlCtx.fillRect(x, bandY0, 1, bandY1 - bandY0);
+            }
+
+            // 차수 경계선 (550·1100·1650 nm)
+            mlCtx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+            mlCtx.lineWidth = 1;
+            [550, 1100, 1650].forEach(r => {
+                mlCtx.beginPath();
+                mlCtx.moveTo(xOf(r), bandY0);
+                mlCtx.lineTo(xOf(r), bandY1);
+                mlCtx.stroke();
+            });
+
+            // 차수 글자 (각 구간 가운데, 띠 위)
+            mlCtx.fillStyle = isLight() ? '#3b4a7a' : '#aab';
+            mlCtx.font = '11px Malgun Gothic';
+            mlCtx.textAlign = 'center';
+            mlCtx.textBaseline = 'middle';
+            mlCtx.fillText('1차', xOf(275), 9);
+            mlCtx.fillText('2차', xOf(825), 9);
+            mlCtx.fillText('3차', xOf(1375), 9);
+
+            // 눈금 글자 (띠 아래)
+            mlCtx.font = '11px Malgun Gothic';
+            mlCtx.textBaseline = 'alphabetic';
+            mlCtx.textAlign = 'left';
+            mlCtx.fillText('0', 0, 56);
+            mlCtx.textAlign = 'center';
+            mlCtx.fillText('550', xOf(550), 56);
+            mlCtx.fillText('1100', xOf(1100), 56);
+            mlCtx.fillText('1650 nm', xOf(1650), 56);
+
+            if (selectedGrain && !quizHideNumbers()) {
+                // 선택한 알갱이의 경로차 위치 — 노란 삼각형 (꼭짓점이 띠 위쪽 끝)
+                const gR = mineral.birefringence * selectedGrain.bireFactor * selectedGrain.thickness * 1000;
+                mlCtx.fillStyle = isLight() ? '#9a6a00' : '#ffd84d';
+                if (gR > MAXR) {
+                    mlCtx.font = '11px Malgun Gothic';
+                    mlCtx.textAlign = 'right';
+                    mlCtx.textBaseline = 'alphabetic';
+                    mlCtx.fillText('→ 고차', mw - 2, bandY0 - 3);
+                } else {
+                    const mx = xOf(gR);
+                    mlCtx.beginPath();
+                    mlCtx.moveTo(mx, bandY0);
+                    mlCtx.lineTo(mx - 4, bandY0 - 7);
+                    mlCtx.lineTo(mx + 4, bandY0 - 7);
+                    mlCtx.closePath();
+                    mlCtx.fill();
+                }
+            } else if (!quizHideNumbers()) {
+                // 광물 대표 경로차(두께 30µm 기준) 위치 — 흰 점선
+                const repR = mineral.birefringence * 30 * 1000;
+                const mx = Math.min(xOf(repR), mw);
+                mlCtx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+                mlCtx.lineWidth = 1;
+                mlCtx.setLineDash([3, 3]);
+                mlCtx.beginPath();
+                mlCtx.moveTo(mx, bandY0);
+                mlCtx.lineTo(mx, bandY1);
+                mlCtx.stroke();
+                mlCtx.setLineDash([]);
+            }
+        }
+
+        function updateInfoPanel(mineral, stageAngle) {
+            const modeBadge = document.getElementById('mode-badge');
+            const obsMode = document.getElementById('obs-mode');
+
+            modeBadge.setAttribute('data-term', currentMode === 'bertrand' ? 'cono' : 'ortho');
+            if (currentMode === 'ppl') {
+                obsMode.textContent = '개방니콜 (PPL)';
+                modeBadge.textContent = 'PPL — 오소스코프';
+                modeBadge.className = 'badge-ppl';
+            } else if (currentMode === 'xpl') {
+                obsMode.textContent = '직교니콜 (XPL)';
+                modeBadge.textContent = 'XPL — 오소스코프';
+                modeBadge.className = 'badge-xpl';
+            } else {
+                obsMode.textContent = '직교니콜 + 버틀랜드 렌즈';
+                modeBadge.textContent = 'XPL — 코노스코프';
+                modeBadge.className = 'badge-bertrand';
+            }
+
+            document.getElementById('info-name').textContent = mineral.name;
+            document.getElementById('info-optic').textContent =
+                mineral.opticType === 'isotropic'
+                    ? '등방성 (등축계)'
+                    : mineral.opticType === 'uniaxial'
+                        ? `일축성 (${mineral.opticSign})`
+                        : `이축성 (${mineral.opticSign}), 2V=${mineral.twoV}°`;
+            document.getElementById('info-bire').textContent = mineral.birefringence.toFixed(3);
+            document.getElementById('info-ext').textContent = mineral.extinctionDesc || '-';
+
+            const retardation = mineral.birefringence * 30 * 1000;
+            document.getElementById('info-retard').textContent = `${Math.round(retardation)} nm`;
+            document.getElementById('info-order').textContent =
+                mineral.opticType === 'isotropic' ? '해당 없음' : getInterferenceOrder(retardation);
+            document.getElementById('info-pleo').textContent = mineral.pleochroismDesc;
+
+            const swatch = document.getElementById('color-swatch');
+            if (currentMode === 'ppl') {
+                const stageRad = stageAngle * Math.PI / 180;
+                const f = Math.cos(stageRad) * Math.cos(stageRad);
+                const pr = Math.round(mineral.colorA[0] * f + mineral.colorB[0] * (1 - f));
+                const pg = Math.round(mineral.colorA[1] * f + mineral.colorB[1] * (1 - f));
+                const pb = Math.round(mineral.colorA[2] * f + mineral.colorB[2] * (1 - f));
+                swatch.style.background = `rgb(${pr}, ${pg}, ${pb})`;
+            } else {
+                const rgb = retardationToRGB(retardation);
+                swatch.style.background = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+            }
+
+            document.getElementById('mineral-desc').innerHTML = mineral.description;
+
+            // 동정 모드: 광물 정보를 가리고 관찰로 판단하게 한다
+            const swatchEl = document.getElementById('color-swatch');
+            if (quizMode) {
+                document.getElementById('info-name').textContent = '시료 ' + (mineralSelect.selectedIndex + 1);
+                ['info-optic', 'info-bire', 'info-retard', 'info-order', 'info-ext', 'info-pleo']
+                    .forEach(id => { document.getElementById(id).textContent = '관찰로 판단'; });
+                swatchEl.style.display = 'none';
+                document.getElementById('mineral-desc').textContent =
+                    '개방니콜(PPL)에서 색·다색성·벽개·렐리프·변질을, 직교니콜(XPL)에서 간섭색·소광·쌍정을 관찰하여 광물 이름을 판정하시오.';
+            } else {
+                swatchEl.style.display = '';
+            }
+
+            // 지금 보이는 것 해설
+            {
+                const compSel = document.getElementById('comp-select').value;
+                const iso = mineral.opticType === 'isotropic' && !quizMode;
+                let t;
+                if (currentMode === 'ppl') {
+                    t = '개방니콜: 분석기를 빼서 편광판 하나만 지난 빛을 봅니다. 보이는 색은 광물 고유의 색이고, 재물대를 돌릴 때 색이 바뀌면 다색성입니다. 윤곽이 뚜렷할수록 렐리프가 높습니다.';
+                } else if (currentMode === 'xpl') {
+                    if (compSel === 'gypsum') {
+                        t = '집시판(530nm)을 넣으면 광물이 없는 곳이 1차 적자색이 됩니다. 광물의 느린 방향이 집시판의 느린 방향(북동-남서)과 나란하면 경로차가 더해져 청색 쪽으로, 수직이면 빼져 황색 쪽으로 바뀝니다. 소광 위치의 알갱이는 배경과 같은 적자색입니다.';
+                    } else if (compSel === 'quarter') {
+                        t = 'λ/4판(137nm)을 넣으면 배경이 1차 회색이 됩니다. 집시판과 같은 원리로 경로차가 더해지거나 빼지며, 간섭색이 높은 광물의 부호 판정에 씁니다.';
+                    } else if (compSel === 'wedge') {
+                        t = '석영 쐐기를 밀어 넣을수록 경로차가 연속으로 더해져 배경 간섭색이 1차→2차→3차로 올라갑니다. 광물과 감산 방향일 때 광물이 검게 되는 삽입량으로 광물의 경로차를 잴 수 있습니다.';
+                    } else {
+                        t = '직교니콜: 편광판과 분석기가 직교해 광물이 없으면 검게 보입니다. 광물 안에서 두 빛으로 갈라진 빛의 경로차가 간섭색을 만들고, 진동 방향이 십자선과 나란해지면 어두워집니다(소광, 한 바퀴에 4번).';
+                        if (iso) t += '<br>이 광물은 등방성이라 빛이 갈라지지 않아 재물대를 돌려도 항상 검습니다.';
+                    }
+                } else {
+                    t = '코노스코프: 버틀랜드 렌즈로 수렴광이 만든 간섭상을 봅니다. 일축성은 검은 십자가 재물대를 돌려도 움직이지 않고, 이축성은 0°에서 십자였다가 45°로 돌리면 두 곡선(쌍곡선)으로 갈라집니다.';
+                    if (compSel === 'gypsum') t += '<br>보상기를 넣으면 일축성 (+)는 1·3사분면(북동·남서)이 청색, (−)는 황색이 됩니다.';
+                    else if (compSel === 'quarter') t += '<br>λ/4판을 넣으면 일축성 (+)는 2·4사분면(북서·남동)의 중심 가까이에 검은 점이 생기고, (−)는 1·3사분면에 생깁니다.';
+                    if (iso) t += '<br>등방성 광물은 간섭상이 생기지 않습니다.';
+                }
+                document.getElementById('now-explain').innerHTML = t;
+            }
+
+            // 선택 그레인이 바뀌면 소광각 측정 기록 초기화
+            if (selectedGrain !== lastSelForMeasure) {
+                lastSelForMeasure = selectedGrain;
+                extMeasure = { a1: null, a2: null };
+            }
+
+            // 선택한 알갱이 정보
+            const gi = document.getElementById('grain-info');
+            if (!selectedGrain) {
+                gi.innerHTML = '<div style="font-size:13px;color:#8899aa">시야의 알갱이를 클릭하면 정보가 나타납니다.</div>';
+            } else {
+                const g = selectedGrain;
+                const gR = mineral.birefringence * g.bireFactor * g.thickness * 1000; // 이 알갱이의 경로차 (nm)
+                let rows = '';
+                if (g.section && !quizMode) { // 동정 모드에서는 '단면' 줄 자체를 숨김 (줄 유무가 힌트가 됨)
+                    rows += grainInfoRow('단면', g.section === 'long' ? '세로 단면 (벽개 1방향)' : '기저 단면 (벽개 2방향)', true);
+                }
+                rows += grainInfoRow('경로차', Math.round(gR) + ' nm', true);
+                rows += grainInfoRow('간섭색 차수',
+                    mineral.opticType === 'isotropic' ? '해당 없음' : getInterferenceOrder(gR), true);
+                // 현재 밝기 — XPL에서는 sin²(2θ) (calculateGrainColor와 같은 식)
+                let bright;
+                if (currentMode === 'ppl') {
+                    bright = '— (개방니콜)';
+                } else if (getCompensatorR() > 0) {
+                    bright = '보상기 삽입 중';
+                } else if (mineral.opticType === 'isotropic') {
+                    bright = '0% (완전 소광)';
+                } else {
+                    const effA = (g.orientation + stageAngle - (g.extAngle ?? mineral.extinctionAngle)) * Math.PI / 180;
+                    const pct = Math.round(Math.sin(2 * effA) ** 2 * 100);
+                    bright = pct + '%' + (pct <= 3 ? ' (소광)' : '');
+                }
+                rows += grainInfoRow('현재 밝기', bright);
+                rows += extMeasureBoxHTML();
+                gi.innerHTML = rows;
+            }
+        }
+
+        // 선택한 알갱이 정보 행 생성 — hideInQuiz 행은 D2 동정 모드에서 숨길 수 있게 표시
+        function grainInfoRow(label, value, hideInQuiz) {
+            if (hideInQuiz && quizMode) value = '관찰로 판단';
+            const GI_TERM = { '단면': 'section', '경로차': 'retard', '간섭색 차수': 'order', '현재 밝기': 'brightness' };
+            const termAttr = GI_TERM[label] ? ` data-term="${GI_TERM[label]}"` : '';
+            return `<div class="info-row"${hideInQuiz ? ' data-quiz-hide="1"' : ''}>`
+                + `<span class="info-label"${termAttr}>${label}</span>`
+                + `<span class="info-value">${value}</span></div>`;
+        }
+
+        // 소광각 측정 상자 (XPL·보상기 없음일 때만)
+        function extMeasureBoxHTML() {
+            if (currentMode !== 'xpl' || getCompensatorR() > 0) {
+                return '<div style="font-size:13.5px;color:#8899aa;margin-top:8px"><span data-term="extangle">소광각</span> 측정은 XPL(보상기 없음)에서 할 수 있습니다.</div>';
+            }
+            const btnStyle = 'padding:6px 10px;font-size:14px';
+            const v = x => (x === null ? '-' : x + '°');
+            let h = '<div style="margin-top:10px">'
+                + '<div style="font-size:13.5px;color:#8899aa">※ 벽개가 한 방향으로만 보이는 길쭉한 알갱이에서 잽니다.</div>'
+                + '<div style="font-size:13.5px;color:#8899aa">1) 벽개선이 십자선과 나란하도록 재물대를 돌린 뒤 ①을 누릅니다.</div>'
+                + '<div style="font-size:13.5px;color:#8899aa">2) 알갱이가 가장 어두워질 때까지 돌린 뒤 ②를 누릅니다.</div>'
+                + '<div style="margin:6px 0"><button class="mode-btn" style="' + btnStyle + '" data-act="ext-a1">① 기준 각도 기록</button> '
+                + '<button class="mode-btn" style="' + btnStyle + '" data-act="ext-a2">② 소광 각도 기록</button></div>'
+                + '<div class="info-row"><span class="info-label">기준 각도</span><span class="info-value">' + v(extMeasure.a1) + '</span></div>'
+                + '<div class="info-row"><span class="info-label">소광 각도</span><span class="info-value">' + v(extMeasure.a2) + '</span></div>';
+            if (extMeasure.a1 !== null && extMeasure.a2 !== null) {
+                const d = Math.abs(extMeasure.a2 - extMeasure.a1) % 90;
+                const n = Math.round(Math.min(d, 90 - d));
+                h += '<div style="font-weight:bold;color:#ffd84d;margin-top:4px"><span data-term="extangle">소광각</span>: ' + n + '°</div>';
+            }
+            return h + '</div>';
+        }
+
+        // 측정 버튼 — 이벤트 위임 (innerHTML이 다시 써져도 동작)
+        // 자동 회전 중에는 패널이 매 프레임 다시 써져 click이 유실되므로 pointerdown으로 받고,
+        // 키보드용 click은 남기되 같은 누름의 중복 기록은 무시한다
+        let lastPDAct = null, lastPDTime = 0;
+        function handleMeasureAct(btn) {
+            const cur = Math.round(parseFloat(stageSlider.value)) % 360;
+            if (btn.dataset.act === 'ext-a1') extMeasure.a1 = cur;
+            else if (btn.dataset.act === 'ext-a2') extMeasure.a2 = cur;
+            else return false;
+            render();
+            return true;
+        }
+        document.getElementById('info-panel').addEventListener('pointerdown', (e) => {
+            if (e.button !== undefined && e.button !== 0) return;
+            const btn = e.target.closest('[data-act]');
+            if (!btn) return;
+            if (handleMeasureAct(btn)) { lastPDAct = btn.dataset.act; lastPDTime = performance.now(); }
+        });
+        document.getElementById('info-panel').addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-act]');
+            if (!btn) return;
+            if (btn.dataset.act === lastPDAct && performance.now() - lastPDTime < 700) { lastPDAct = null; return; }
+            handleMeasureAct(btn);
+        });
+
+        // ===== 이벤트 =====
+        stageSlider.addEventListener('input', () => {
+            stageVal.textContent = stageSlider.value + '°';
+            render();
+        });
+
+        mineralSelect.addEventListener('change', () => {
+            generateGrains(minerals[parseInt(mineralSelect.value)]);
+            render();
+        });
+
+        // 대물렌즈 배율
+        document.getElementById('obj-select').addEventListener('change', render);
+
+        // 보상기 — 석영 쐐기 선택 시 삽입량 슬라이더 표시
+        document.getElementById('comp-select').addEventListener('change', (e) => {
+            document.getElementById('wedge-label').style.display =
+                e.target.value === 'wedge' ? 'flex' : 'none';
+            render();
+        });
+        document.getElementById('wedge-slider').addEventListener('input', (e) => {
+            document.getElementById('wedge-val').textContent = e.target.value + ' nm';
+            render();
+        });
+
+        // 조명 밝기
+        document.getElementById('light-slider').addEventListener('input', (e) => {
+            document.getElementById('light-val').textContent = e.target.value + '%';
+            render();
+        });
+
+        // 재물대 스냅 버튼
+        function setStage(deg) {
+            stageSlider.value = deg;
+            stageVal.textContent = deg + '°';
+            render();
+        }
+        document.getElementById('btn-snap0').addEventListener('click', () => setStage(0));
+        document.getElementById('btn-snap45').addEventListener('click', () => setStage(45));
+        // 미세 회전 (1°씩, 0~360 순환)
+        function nudgeStage(d) {
+            setStage((((Math.round(parseFloat(stageSlider.value)) + d) % 360) + 360) % 360);
+        }
+        document.getElementById('btn-minus1').addEventListener('click', () => nudgeStage(-1));
+        document.getElementById('btn-plus1').addEventListener('click', () => nudgeStage(1));
+
+        // ===== 동정 모드 =====
+        function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+        function quizOrder(set) { const rnd = mulberry32(set * 7919 + 13); const arr = QUIZ_IDS.slice(); for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+        const QUIZ_DEFAULT_SET = 1; // 학습지에 인쇄한 세트 — 반 전체 공통
+
+        function setQuiz(on, set) {
+            quizMode = on;
+            document.getElementById('btn-quiz').classList.toggle('active-bertrand', on);
+            mineralSelect.innerHTML = '';
+            if (on) {
+                quizSet = set || (quizSetChosen ? quizSet : QUIZ_DEFAULT_SET); // 다시 켤 때는 직전 세트 유지
+                quizSetChosen = true;
+                quizOrder(quizSet).forEach((id, k) => {
+                    const opt = document.createElement('option');
+                    opt.value = minerals.findIndex(m => m.id === id);
+                    opt.textContent = '시료 ' + (k + 1);
+                    mineralSelect.appendChild(opt);
+                });
+                mineralSelect.selectedIndex = 0;
+                document.querySelector('h1').textContent = '편광 현미경 — 동정 모드 (세트 ' + quizSet + ')';
+            } else {
+                minerals.forEach((m, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.textContent = m.name;
+                    mineralSelect.appendChild(opt);
+                });
+                mineralSelect.selectedIndex = 0;
+                document.querySelector('h1').textContent = H1_ORIGINAL;
+            }
+            buildTeacherBox();
+            generateGrains(minerals[parseInt(mineralSelect.value)]);
+            render();
+        }
+        document.getElementById('btn-quiz').addEventListener('click', () => setQuiz(!quizMode));
+
+        // 교사용 정답 상자 — teacher=1 해시일 때만 DOM에 만든다
+        function buildTeacherBox() {
+            const old = document.getElementById('teacher-box');
+            if (old) old.remove();
+            if (!TEACHER || !quizMode) return;
+            const box = document.createElement('div');
+            box.id = 'teacher-box';
+            box.className = 'legend-section';
+            const sel = document.createElement('select');
+            for (let i = 1; i <= 20; i++) {
+                const o = document.createElement('option');
+                o.value = i; o.textContent = '세트 ' + i;
+                if (i === quizSet) o.selected = true;
+                sel.appendChild(o);
+            }
+            sel.addEventListener('change', () => setQuiz(true, parseInt(sel.value)));
+            const btn = document.createElement('button');
+            btn.className = 'mode-btn';
+            btn.textContent = '정답 보기';
+            const out = document.createElement('div');
+            out.style.cssText = 'font-size:13.5px;margin-top:6px;display:none';
+            btn.addEventListener('click', () => {
+                const show = out.style.display === 'none';
+                if (show) {
+                    out.textContent = quizOrder(quizSet).map((id, k) =>
+                        '시료 ' + (k + 1) + ' = ' + minerals.find(m => m.id === id).name.split(' (')[0]).join(' · ');
+                }
+                out.style.display = show ? 'block' : 'none';
+                btn.textContent = show ? '정답 숨기기' : '정답 보기';
+            });
+            const h = document.createElement('h3');
+            h.textContent = '교사용';
+            box.append(h, sel, ' ', btn, out);
+            document.getElementById('info-panel').appendChild(box);
+        }
+
+        // 재물대 자동 회전
+        function rotateStep() {
+            if (!autoRotate) return;
+            const v = (parseFloat(stageSlider.value) + 0.5) % 360;
+            stageSlider.value = v;
+            stageVal.textContent = Math.round(v) + '°';
+            render();
+            requestAnimationFrame(rotateStep);
+        }
+        document.getElementById('btn-rotate').addEventListener('click', function () {
+            autoRotate = !autoRotate;
+            this.classList.toggle('active-ppl', autoRotate);
+            if (autoRotate) requestAnimationFrame(rotateStep);
+        });
+
+        // ===== 알갱이 클릭 선택 =====
+        // 광선 교차법으로 다각형 안쪽 판정
+        function pointInPolygon(px, py, verts) {
+            let inside = false;
+            for (let i = 0, j = verts.length - 1; i < verts.length; j = i++) {
+                const xi = verts[i][0], yi = verts[i][1];
+                const xj = verts[j][0], yj = verts[j][1];
+                if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside;
+            }
+            return inside;
+        }
+
+        canvas.addEventListener('click', (e) => {
+            if (currentMode === 'bertrand') return; // 코노스코프 화면에서는 선택 안 함
+            // 화면 좌표 → 캔버스 좌표
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * canvas.width / rect.width;
+            const y = (e.clientY - rect.top) * canvas.height / rect.height;
+            if (Math.hypot(x - CX, y - CY) > RADIUS) return; // 시야 원 밖 무시
+
+            // 배율·재물대 회전을 되돌려 박편 좌표로
+            const zoom = parseInt(document.getElementById('obj-select').value) / 10;
+            const s = parseFloat(stageSlider.value) * Math.PI / 180;
+            const dx = (x - CX) / zoom, dy = (y - CY) / zoom;
+            const tx = dx * Math.cos(s) + dy * Math.sin(s) + CX;
+            const ty = -dx * Math.sin(s) + dy * Math.cos(s) + CY;
+
+            // 위에 그려진 것부터(배열 뒤에서부터) 안쪽 판정
+            selectedGrain = null;
+            for (let i = grains.length - 1; i >= 0; i--) {
+                const g = grains[i];
+                // 박편 좌표 → 그레인 국소 좌표 (위치 이동 후 -orientation 회전)
+                const o = g.orientation * Math.PI / 180;
+                const ux = tx - g.x, uy = ty - g.y;
+                const lx = ux * Math.cos(o) + uy * Math.sin(o);
+                const ly = -ux * Math.sin(o) + uy * Math.cos(o);
+                if (pointInPolygon(lx, ly, g.vertices)) { selectedGrain = g; break; }
+            }
+            render();
+        });
+
+        // ===== 초기화 =====
+        // URL 해시로 초기 상태 지정 가능: #mineral=quartz&mode=xpl&stage=45
+        (function applyHash() {
+            const h = new URLSearchParams(location.hash.slice(1));
+            const mid = h.get('mineral');
+            if (mid) {
+                const idx = minerals.findIndex(m => m.id === mid);
+                if (idx >= 0) mineralSelect.value = idx;
+            }
+            const s = parseFloat(h.get('stage'));
+            if (!isNaN(s)) { stageSlider.value = s; stageVal.textContent = stageSlider.value + '°'; }
+            const m = h.get('mode');
+            if (m && ['ppl', 'xpl', 'bertrand'].includes(m)) {
+                currentMode = m;
+                document.getElementById('btn-ppl').className = 'mode-btn' + (m === 'ppl' ? ' active-ppl' : '');
+                document.getElementById('btn-xpl').className = 'mode-btn' + (m === 'xpl' ? ' active-xpl' : '');
+                document.getElementById('btn-bertrand').className = 'mode-btn' + (m === 'bertrand' ? ' active-bertrand' : '');
+            }
+            const obj = h.get('obj');
+            if (obj && ['4', '10', '40'].includes(obj)) document.getElementById('obj-select').value = obj;
+            const comp = h.get('comp');
+            if (comp && ['none', 'gypsum', 'quarter', 'wedge'].includes(comp)) {
+                document.getElementById('comp-select').value = comp;
+                document.getElementById('wedge-label').style.display = comp === 'wedge' ? 'flex' : 'none';
+            }
+            const wedge = parseFloat(h.get('wedge'));
+            if (!isNaN(wedge)) {
+                document.getElementById('wedge-slider').value = wedge;
+                document.getElementById('wedge-val').textContent = document.getElementById('wedge-slider').value + ' nm';
+            }
+            const light = parseFloat(h.get('light'));
+            if (!isNaN(light)) {
+                document.getElementById('light-slider').value = light;
+                document.getElementById('light-val').textContent = document.getElementById('light-slider').value + '%';
+            }
+        })();
+
+        {
+            const hq = new URLSearchParams(location.hash.slice(1));
+            if (hq.get('quiz') === '1') {
+                const qs = parseInt(hq.get('quizset'));
+                setQuiz(true, (qs >= 1 && qs <= 20) ? qs : undefined);
+                const sp = parseInt(hq.get('sample'));
+                if (sp >= 1 && sp <= 6) mineralSelect.selectedIndex = sp - 1;
+                // 학생용 주소(quiz=1, teacher 아님): 동정 모드 끄기 잠금
+                if (!TEACHER) {
+                    const qb = document.getElementById('btn-quiz');
+                    qb.disabled = true;
+                    qb.removeAttribute('title');
+                    qb.textContent = '동정 모드 (고정)';
+                }
+            }
+        }
+        generateGrains(minerals[parseInt(mineralSelect.value)]);
+        // sel=auto (시험·촬영용): 시야 중심에 가장 가까운 그레인을 자동 선택
+        if (new URLSearchParams(location.hash.slice(1)).get('sel') === 'auto') {
+            let best = null, bestD = Infinity;
+            for (const g of grains) {
+                const d = Math.hypot(g.x - CX, g.y - CY);
+                if (d < bestD) { bestD = d; best = g; }
+            }
+            selectedGrain = best;
+        }
+
+        // ===== 학습지 활동 안내판 (G2) =====
+        // 활동별 안내 문구 (정답이 되는 낱말은 넣지 않는다)
+        const ACT_GUIDE = {
+            1: '① 직교 니콜(XPL) 상태입니다. 시야의 알갱이 하나를 클릭하시오.<br>② [자동 회전]을 켜거나 재물대 막대를 돌리며, \'현재 밝기\'가 0%가 되는 횟수를 한 바퀴(360°) 동안 세시오.<br>③ \'지금 보이는 것\' 칸에서 알갱이가 어두워지는 까닭을 찾으시오.',
+            2: '① 개방 니콜(PPL) 상태입니다. 광물 선택에서 석영과 정장석을 번갈아 고르시오.<br>② 표면이 뿌옇게 흐린 광물을 찾고, \'광물 설명\' 칸에서 흐린 까닭을 찾으시오.',
+            3: '① 직교 니콜(XPL) 상태입니다. 광물 선택에서 석영과 사장석을 번갈아 고르시오.<br>② 나란한 흑백 줄무늬가 보이는 광물을 찾고, \'광물 설명\' 칸에서 그 줄무늬의 이름을 찾으시오.',
+            4: '① 화면 제목에 (세트 1), 광물 선택에 \'시료 3\'이 보이는지 확인하시오.<br>② [PPL]에서 재물대를 돌리며 시료 3의 색이 어떻게 바뀌는지 보시오.<br>③ [동정 모드]를 눌러 끄고 흑운모·각섬석·휘석을 차례로 골라 비교한 뒤, 다시 눌러 시료 3으로 돌아오시오.'
+        };
+        // 활동별 반짝일 대상 id
+        const ACT_FLASH = {
+            1: ['microscope', 'btn-rotate'],
+            2: ['mineral-select'],
+            3: ['mineral-select', 'stage-slider'],
+            4: ['mineral-select', 'btn-ppl', 'btn-quiz']
+        };
+        const ACT_MINERAL = { 1: 'quartz', 2: 'quartz', 3: 'quartz' };
+        const ACT_MODE = { 1: 'xpl', 2: 'ppl', 3: 'xpl' };
+
+        // 구조 탭 깜박임과 같은 방식: 노란 테두리 0.5초 간격, 2.5초 후 사라짐
+        function flashGuide(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            let n = 0;
+            const iv = setInterval(() => {
+                n++;
+                el.style.outline = (n % 2) ? '2px solid ' + (isLight() ? '#d99a00' : '#ffd84d') : 'none';
+                el.style.outlineOffset = '2px';
+                if (n >= 5) { clearInterval(iv); el.style.outline = ''; el.style.outlineOffset = ''; }
+            }, 500);
+        }
+
+        // 공통 초기 상태: 대물렌즈 10×, 보상기 없음, 조명 100%, 자동 회전 끔, 재물대 0°
+        function resetCommonControls() {
+            const objSel = document.getElementById('obj-select');
+            objSel.value = '10';
+            objSel.dispatchEvent(new Event('change'));
+            const compSel = document.getElementById('comp-select');
+            compSel.value = 'none';
+            compSel.dispatchEvent(new Event('change'));
+            const lightSlider = document.getElementById('light-slider');
+            lightSlider.value = 100;
+            lightSlider.dispatchEvent(new Event('input'));
+            if (autoRotate) document.getElementById('btn-rotate').click();
+            setStage(0);
+        }
+
+        function showGuide(num, html) {
+            document.getElementById('activity-num').textContent = num || '';
+            document.getElementById('activity-text').innerHTML = html;
+            document.getElementById('activity-guide').style.display = 'flex';
+        }
+
+        // quiz=1로 동정 모드가 고정됐는지 (동정 모드 단추가 disabled)
+        function quizLocked() { return document.getElementById('btn-quiz').disabled; }
+
+        function applyActivity(n) {
+            if (n >= 1 && n <= 3 && quizLocked()) {
+                showGuide('', '이 주소는 시료 동정 전용입니다.');
+                return;
+            }
+            document.querySelectorAll('.act-btn').forEach(b =>
+                b.classList.toggle('active-xpl', parseInt(b.dataset.act) === n));
+            if (n <= 3) {
+                if (quizMode) setQuiz(false);
+                resetCommonControls();
+                mineralSelect.value = minerals.findIndex(m => m.id === ACT_MINERAL[n]);
+                mineralSelect.dispatchEvent(new Event('change'));
+                setMode(ACT_MODE[n]);
+            } else {
+                if (!(quizMode && quizSet === 1)) setQuiz(true, 1);
+                resetCommonControls();
+                mineralSelect.selectedIndex = 2; // 시료 3
+                mineralSelect.dispatchEvent(new Event('change'));
+                setMode('ppl');
+            }
+            showGuide(n, ACT_GUIDE[n]);
+            try { document.getElementById('activity-guide').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) { }
+            ACT_FLASH[n].forEach(flashGuide);
+        }
+
+        document.querySelectorAll('.act-btn').forEach(b =>
+            b.addEventListener('click', () => applyActivity(parseInt(b.dataset.act))));
+        document.getElementById('btn-guide-close').addEventListener('click', () => {
+            document.getElementById('activity-guide').style.display = 'none';
+        });
+
+        // quiz=1 고정 주소: 활동 1~3 비활성화 + 안내 문구
+        if (quizLocked()) {
+            document.querySelectorAll('.act-btn').forEach(b => {
+                if (parseInt(b.dataset.act) <= 3) b.disabled = true;
+            });
+            showGuide('', '이 주소는 시료 동정 전용입니다.');
+        }
+
+        // 해시 act=1~4: 그 활동을 고른 상태로 시작 (quiz=1과 함께면 4만 허용)
+        {
+            const ha = parseInt(new URLSearchParams(location.hash.slice(1)).get('act'));
+            if (ha >= 1 && ha <= 4) applyActivity(ha);
+        }
+
+        // ===== 용어 풀이 말풍선 + 용어 정리 창 (G3) =====
+        // 보상기 select는 option에 툴팁을 못 붙이므로 현재 선택값으로 풀이 키를 정한다
+        const COMP_TERM = { none: 'compensator', gypsum: 'gypsum', quarter: 'quarter', wedge: 'wedge' };
+        document.getElementById('comp-select').addEventListener('change', function () {
+            this.setAttribute('data-term', COMP_TERM[this.value] || 'compensator');
+        });
+        function termKeysOf(el) {
+            return (el.getAttribute('data-term') || '').split(/\s+/).filter(k => TERMS[k]);
+        }
+        function termTipHTML(el) {
+            return termKeysOf(el).map((k, i) =>
+                '<div' + (i ? ' class="tt-sep"' : '') + '><b>' + TERMS[k].name + '</b><br>' + TERMS[k].desc + '</div>').join('');
+        }
+        (function () {
+            const tip = document.getElementById('term-tip');
+            let cur = null, timer = null, mx = 0, my = 0;
+            function hideTip() { clearTimeout(timer); timer = null; tip.style.display = 'none'; cur = null; }
+            function showTip(el) {
+                if (!el || !el.isConnected) return;
+                const html = termTipHTML(el);
+                if (!html) return;
+                tip.innerHTML = html;
+                tip.style.left = '8px'; tip.style.top = '8px';
+                tip.style.display = 'block';
+                const r = tip.getBoundingClientRect();
+                let x = mx + 14, y = my + 18;
+                if (x + r.width > window.innerWidth - 8) x = window.innerWidth - r.width - 8;
+                if (y + r.height > window.innerHeight - 8) y = my - r.height - 12;
+                tip.style.left = Math.max(8, x) + 'px';
+                tip.style.top = Math.max(8, y) + 'px';
+            }
+            function termOf(t) { return (t && t.closest) ? t.closest('[data-term]') : null; }
+            document.addEventListener('mouseover', (e) => {
+                const el = termOf(e.target);
+                mx = e.clientX; my = e.clientY;
+                if (!el) { if (cur) hideTip(); return; }
+                if (el === cur) return;
+                hideTip(); cur = el;
+                timer = setTimeout(() => showTip(el), 250);
+            });
+            document.addEventListener('mouseout', (e) => {
+                if (!cur) return;
+                const to = e.relatedTarget;
+                if (to && cur.contains(to)) return;
+                hideTip();
+            });
+            document.addEventListener('mousemove', (e) => {
+                mx = e.clientX; my = e.clientY;
+                if (cur && tip.style.display === 'block' && !cur.isConnected) hideTip();
+            });
+            document.addEventListener('focusin', (e) => {
+                const el = termOf(e.target);
+                if (!el) return;
+                const r = el.getBoundingClientRect();
+                mx = r.left; my = r.bottom - 14;
+                hideTip(); cur = el; showTip(el);
+            });
+            document.addEventListener('focusout', () => { if (cur) hideTip(); });
+            // 터치: 점선 낱말을 누르면 보이고, 다른 곳을 누르면 숨김
+            document.addEventListener('pointerdown', (e) => {
+                if (e.pointerType !== 'touch') return;
+                const el = termOf(e.target);
+                mx = e.clientX; my = e.clientY;
+                hideTip();
+                if (el) { cur = el; showTip(el); }
+            });
+        })();
+
+        (function () {
+            const ov = document.getElementById('glossary-overlay');
+            const box = document.getElementById('glossary-box');
+            const list = document.getElementById('glossary-list');
+            const search = document.getElementById('glossary-search');
+            const GROUPS = [['관찰', '관찰 방법'], ['조작', '현미경 조작'], ['성질', '광물의 성질'], ['간섭과 소광', '간섭과 소광']];
+            function esc(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+            function renderList() {
+                const q = search.value.trim().toLowerCase();
+                let html = '';
+                GROUPS.forEach(g => {
+                    const items = Object.keys(TERMS).filter(k => TERMS[k].group === g[0] &&
+                        (!q || (TERMS[k].name + ' ' + TERMS[k].desc).toLowerCase().indexOf(q) >= 0));
+                    if (!items.length) return;
+                    html += '<h3>' + g[1] + '</h3>';
+                    items.forEach(k => {
+                        html += '<div class="gl-item"><b>' + esc(TERMS[k].name) + '</b> — ' + esc(TERMS[k].desc) + '</div>';
+                    });
+                });
+                list.innerHTML = html || '<div class="gl-none">찾는 용어가 없습니다.</div>';
+            }
+            function openGlossary() {
+                search.value = '';
+                renderList();
+                ov.style.display = 'flex';
+                box.scrollTop = 0;
+                try { search.focus(); } catch (e) { }
+            }
+            function closeGlossary() { ov.style.display = 'none'; }
+            document.querySelectorAll('[data-open-glossary]').forEach(b => b.addEventListener('click', openGlossary));
+            document.getElementById('glossary-close').addEventListener('click', closeGlossary);
+            ov.addEventListener('mousedown', (e) => { if (e.target === ov) closeGlossary(); });
+            search.addEventListener('input', renderList);
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && ov.style.display === 'flex') closeGlossary();
+            });
+        })();
+        render();
+    </script>
+    <script>
+// ===== 현미경 구조 탭: 외부 라이브러리 없는 의사-3D 편광현미경 모형 =====
+(function () {
+    const cv = document.getElementById('scope3d');
+    const ctx = cv.getContext('2d');
+    const W = 620, H = 680;
+    const PITCH = 18 * Math.PI / 180, CP = Math.cos(PITCH), SP = Math.sin(PITCH);
+    const GAP = 4.6;   // 분해도에서 부품 사이 간격
+    const LX = 505;    // 이름표 글자 시작 x
+    const YAW_MAX = 80 * Math.PI / 180;
+    let yaw = -25 * Math.PI / 180;
+    let expl = 0, explAnim = null;   // 분해 정도(0~1)와 애니메이션
+    let yawAnim = null;
+    let showLight = true, sel = null, hover = null, dash = 0;
+    let labelHits = [], labelHover = null; // 이름표 사각형(클릭·올려보기용)
+    let prims = [];
+    let view = { cx: 235, cy: 340, s: 5.3 };
+    let looping = false, visible = false;
+
+    // ----- 부품 목록 (아래→위 순서, 문구는 명세 그대로) -----
+    const PARTS = [
+        { id: 'lamp', name: '광원', desc: '받침 속 램프(할로겐·LED)가 아래에서 위로 빛을 보낸다.', sim: '조명 밝기 슬라이더', ctl: 'light-slider' },
+        { id: 'dimmer', name: '조광기', desc: '광원에 걸리는 전압을 바꿔 빛의 밝기를 조절한다.', sim: '조명 밝기 슬라이더', ctl: 'light-slider' },
+        { id: 'polarizer', name: '하부 편광판', desc: '빛을 한 방향(동-서)으로만 진동하게 만든다. 관찰 중 늘 광로에 있다.', sim: "'편광판 배치' 그림의 노란 화살표", ctl: null },
+        { id: 'iris', name: '조리개', desc: '빛이 지나는 구멍 크기를 바꿔 밝기와 대비를 조절한다. 조이면 윤곽(렐리프)이 뚜렷해진다.', sim: '시뮬레이션에는 따로 없음 (조명 밝기로 대신)', ctl: null },
+        { id: 'condenser', name: '집광렌즈', desc: '빛을 모아 박편에 고르게 비춘다. 코노스코프 관찰 때는 보조 집광렌즈를 넣어 빛을 강하게 수렴시킨다.', sim: 'Bertrand 관찰의 수렴광', ctl: 'btn-bertrand' },
+        { id: 'stage', name: '재물대', desc: '박편을 올려놓고 360° 돌리는 원형 받침. 둘레의 각도 눈금으로 소광각을 잰다.', sim: '재물대 회전 슬라이더, 0°·45°·±1° 버튼, 자동 회전', ctl: 'stage-slider' },
+        { id: 'slide', name: '박편', desc: '암석을 약 0.03mm(30µm) 두께로 갈아 유리에 붙인 시료. 이 두께라야 대부분의 광물이 빛을 통과시킨다.', sim: '광물 선택', ctl: 'mineral-select' },
+        { id: 'objective', name: '대물렌즈', desc: '박편의 상을 처음 확대한다. 회전판을 돌려 4×·10×·40×를 바꾼다.', sim: '대물렌즈 선택', ctl: 'obj-select' },
+        { id: 'slot', name: '보상기 슬롯', desc: '경통에 45° 방향으로 뚫린 홈. 집시판·λ/4판·석영 쐐기를 꽂아 경로차를 더하거나 빼서 광학 부호를 판정한다.', sim: '보상기 선택', ctl: 'comp-select' },
+        { id: 'analyzer', name: '분석기', desc: '위쪽 편광판(남-북 방향). 넣으면 직교니콜(XPL), 빼면 개방니콜(PPL)이 된다.', sim: 'PPL / XPL 버튼', ctl: 'btn-xpl' },
+        { id: 'bertrand', name: '버틀랜드 렌즈', desc: '대물렌즈 뒤쪽에 생긴 간섭상(코노스코프 상)을 접안렌즈로 볼 수 있게 해 준다. 고배율 대물렌즈와 함께 쓴다.', sim: 'Bertrand 버튼', ctl: 'btn-bertrand' },
+        { id: 'eyepiece', name: '접안렌즈', desc: '대물렌즈가 만든 상을 한 번 더 확대한다(보통 10×). 안에 십자선이 있어 방향의 기준이 된다. 총배율 = 접안렌즈 × 대물렌즈.', sim: '시야의 점선 십자선', ctl: null },
+        { id: 'focus', name: '초점 조절 나사', desc: '재물대(또는 경통)를 위아래로 움직여 초점을 맞춘다. 큰 나사는 크게, 작은 나사는 미세하게.', sim: '시뮬레이션은 항상 초점이 맞음', ctl: null },
+        { id: 'body', name: '몸체', desc: '부품을 지탱하는 받침과 기둥. 옮길 때는 기둥과 받침을 두 손으로 잡는다.', sim: '—', ctl: null }
+    ];
+    const byId = {};
+    PARTS.forEach(p => { byId[p.id] = p; });
+
+    // ----- 벡터·투영 도구 -----
+    function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+    function norm(a) { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; }
+    function rotP(p) { const c = Math.cos(yaw), s = Math.sin(yaw); return [p[0] * c + p[2] * s, p[1], -p[0] * s + p[2] * c]; }
+    function projR(r) { return [view.cx + r[0] * view.s, view.cy - (r[1] * CP - r[2] * SP) * view.s]; }
+    function proj(p) { return projR(rotP(p)); }
+    function zrOf(p) { return rotP(p)[2]; }
+    function facing(d) { const r = rotP(d); return r[1] * SP + r[2] * CP; }   // 0보다 크면 보는 쪽을 향함
+    function rgb(c, k, a) {
+        return 'rgba(' + Math.min(255, Math.round(c[0] * k)) + ',' + Math.min(255, Math.round(c[1] * k)) + ',' + Math.min(255, Math.round(c[2] * k)) + ',' + (a == null ? 1 : a) + ')';
+    }
+    function sh(i) { return expl * i * GAP; }
+    function hull(pts) {
+        const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+        const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+        const lo = [];
+        for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+        const up = [];
+        for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+        up.pop(); lo.pop();
+        return lo.concat(up);
+    }
+    function pathPoly(poly) { ctx.beginPath(); poly.forEach((q, i) => { if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); }); ctx.closePath(); }
+    function fillPoly(poly, style) { pathPoly(poly); ctx.fillStyle = style; ctx.fill(); }
+    function strokePoly(poly) { pathPoly(poly); ctx.stroke(); }
+    function ptIn(px, py, poly) {
+        let inside = false;
+        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+            const xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+            if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside;
+        }
+        return inside;
+    }
+
+    // ----- 그릴 것 모으기: 원기둥 / 상자 / 직접 그리기 -----
+    // o: layer(그리는 순서), cap(윗면 색), alpha, decor(맞히기에서 제외)
+    function addCyl(part, c0, dir, len, r, col, o) {
+        o = o || {};
+        const d = norm(dir);
+        const h = Math.abs(d[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+        const u = norm(cross(d, h)), v = cross(d, u);
+        const c1 = [c0[0] + d[0] * len, c0[1] + d[1] * len, c0[2] + d[2] * len];
+        const N = 32, ring0 = [], ring1 = [];
+        for (let i = 0; i < N; i++) {
+            const a = i * 2 * Math.PI / N, ca = Math.cos(a) * r, sa = Math.sin(a) * r;
+            const off = [u[0] * ca + v[0] * sa, u[1] * ca + v[1] * sa, u[2] * ca + v[2] * sa];
+            ring0.push(proj([c0[0] + off[0], c0[1] + off[1], c0[2] + off[2]]));
+            ring1.push(proj([c1[0] + off[0], c1[1] + off[1], c1[2] + off[2]]));
+        }
+        const poly = hull(ring0.concat(ring1));
+        const P0 = proj(c0), P1 = proj(c1);
+        const mid = [(P0[0] + P1[0]) / 2, (P0[1] + P1[1]) / 2];
+        const ax = P1[0] - P0[0], ay = P1[1] - P0[1], al = Math.hypot(ax, ay);
+        let nx = 1, ny = 0;
+        if (al > 1e-3) {
+            nx = -ay / al; ny = ax / al;
+            if (nx < -1e-6 || (Math.abs(nx) < 1e-6 && ny > 0)) { nx = -nx; ny = -ny; }
+        }
+        const rs = r * view.s;
+        const capK = o.cap ? 1 : 1.2, capCol = o.cap || col;
+        const vis0 = facing([-d[0], -d[1], -d[2]]) > 0.0001, vis1 = facing(d) > 0.0001;
+        const alpha = o.alpha == null ? 1 : o.alpha;
+        const zc = zrOf([(c0[0] + c1[0]) / 2, (c0[1] + c1[1]) / 2, (c0[2] + c1[2]) / 2]) + (o.zoff || 0);
+        const cap = (ring) => { fillPoly(ring, rgb(capCol, capK)); ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 0.8; strokePoly(ring); };
+        const draw = () => {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            const g = ctx.createLinearGradient(mid[0] - nx * rs, mid[1] - ny * rs, mid[0] + nx * rs, mid[1] + ny * rs);
+            g.addColorStop(0, rgb(col, 0.85)); g.addColorStop(0.3, rgb(col, 1.12)); g.addColorStop(1, rgb(col, 0.42));
+            fillPoly(poly, g);
+            ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 0.8; strokePoly(poly);
+            if (vis0) cap(ring0);
+            if (vis1) cap(ring1);
+            ctx.restore();
+        };
+        prims.push({ part: part, layer: o.layer, z: zc, draw: draw, poly: o.decor ? null : poly });
+    }
+
+    const LC = norm([-0.45, 0.8, 0.4]);   // 화면 기준 조명 방향
+    function addBox(part, c, size, rotDeg, col, o) {
+        o = o || {};
+        const a = rotDeg * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
+        const hx = size[0] / 2, hy = size[1] / 2, hz = size[2] / 2;
+        const toW = (lx, ly, lz) => [c[0] + lx * ca + lz * sa, c[1] + ly, c[2] - lx * sa + lz * ca];
+        const V = [];
+        for (let i = 0; i < 8; i++) V.push(toW(i & 1 ? hx : -hx, i & 2 ? hy : -hy, i & 4 ? hz : -hz));
+        const SV = V.map(proj);
+        const faces = [
+            { i: [1, 3, 7, 5], n: [1, 0, 0] }, { i: [0, 4, 6, 2], n: [-1, 0, 0] },
+            { i: [2, 6, 7, 3], n: [0, 1, 0] }, { i: [0, 1, 5, 4], n: [0, -1, 0] },
+            { i: [4, 5, 7, 6], n: [0, 0, 1] }, { i: [0, 2, 3, 1], n: [0, 0, -1] }
+        ];
+        const vis = [];
+        for (const f of faces) {
+            const nw = [f.n[0] * ca + f.n[2] * sa, f.n[1], -f.n[0] * sa + f.n[2] * ca];
+            if (facing(nw) > 0.0001) {
+                const nr = rotP(nw);
+                const k = 0.5 + 0.7 * Math.max(0, nr[0] * LC[0] + nr[1] * LC[1] + nr[2] * LC[2]);
+                vis.push({ poly: f.i.map(i => SV[i]), k: k });
+            }
+        }
+        const poly = hull(SV);
+        const alpha = o.alpha == null ? 1 : o.alpha;
+        const draw = () => {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.lineJoin = 'round';
+            for (const f of vis) {
+                fillPoly(f.poly, rgb(col, f.k));
+                ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 0.8; strokePoly(f.poly);
+            }
+            ctx.restore();
+        };
+        prims.push({ part: part, layer: o.layer, z: zrOf(c), draw: draw, poly: o.decor ? null : poly });
+    }
+    function addCustom(part, layer, z, draw) { prims.push({ part: part, layer: layer, z: z, draw: draw, poly: null }); }
+    // 손잡이처럼 본체 앞/뒤로 튀어나온 것: 보는 쪽 앞이면 본체 뒤에 그린다
+    function layerBy(base, p) { return base + (zrOf(p) >= 0 ? 0.2 : -0.2); }
+
+    // ----- 모형 만들기 -----
+    function build() {
+        prims = [];
+        const UP = [0, 1, 0];
+        const MET = [200, 200, 212], DARK = [38, 38, 48];
+
+        // 몸체: 받침 + 뒤쪽 기둥 + 받침대 팔(재물대·회전판·경통 지지)
+        addBox('body', [0, 4.5, -2], [72, 9, 60], 0, [78, 86, 112], { layer: -10 });
+        addCyl('body', [0, 9, 0], UP, 0.1, 9.5, [16, 16, 24], { layer: -9.9, decor: true });
+        addBox('body', [0, 53, -27], [8, 88, 8], 0, [88, 96, 122], { layer: -9 });
+        addBox('body', [0, 37, -19.5], [8, 5, 8], 0, [88, 96, 122], { layer: -9 });
+        addBox('body', [0, 58, -17.5], [8, 4, 12], 0, [88, 96, 122], { layer: -9 });
+        addBox('body', [0, 92.5, -18], [8, 9, 26], 0, [88, 96, 122], { layer: -9 });
+
+        // 조광기: 받침 오른쪽 옆면 다이얼
+        addCyl('dimmer', [36, 4.5, 14], [1, 0, 0], 3.5, 3.6, [214, 160, 58], { layer: -9.5, cap: [240, 200, 100] });
+
+        // 초점 조절 나사: 기둥 양옆 큰(조동)·작은(미동) 한 쌍
+        for (const sx of [1, -1]) {
+            addCyl('focus', [sx * 4, 38, -27], [sx, 0, 0], 5, 7, [120, 126, 142], { layer: -8.9 });
+            addCyl('focus', [sx * 9, 38, -27], [sx, 0, 0], 4, 4.2, [168, 172, 190], { layer: -8.8 });
+        }
+
+        // 0 광원
+        let Y = 9 + sh(0);
+        {
+            const P = proj([0, Y + 4, 0]);
+            addCustom('lamp', 0.05, 0, () => {
+                ctx.save(); ctx.globalCompositeOperation = 'lighter';
+                const g = ctx.createRadialGradient(P[0], P[1], 2, P[0], P[1], 58);
+                g.addColorStop(0, 'rgba(255,215,90,0.55)'); g.addColorStop(1, 'rgba(255,215,90,0)');
+                ctx.fillStyle = g; ctx.beginPath(); ctx.arc(P[0], P[1], 58, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            });
+            addCyl('lamp', [0, Y, 0], UP, 4, 6, [255, 214, 80], { layer: 0, cap: [255, 246, 175] });
+        }
+        // 1 하부 편광판 (노란 테)
+        Y = 16 + sh(1);
+        addCyl('polarizer', [0, Y, 0], UP, 1.5, 11, [236, 190, 52], { layer: 1, cap: [236, 190, 52] });
+        addCyl('polarizer', [0, Y + 1.5, 0], UP, 0.1, 9.4, [58, 58, 76], { layer: 1.1, cap: [58, 58, 76], decor: true });
+        // 2 조리개 + 손잡이
+        Y = 20 + sh(2);
+        addCyl('iris', [0, Y, 0], UP, 1.5, 11, [128, 133, 148], { layer: 2, cap: [150, 155, 170] });
+        addCyl('iris', [0, Y + 1.5, 0], UP, 0.1, 4, [8, 8, 14], { layer: 2.1, cap: [8, 8, 14], decor: true });
+        {
+            const d = norm([0.5, 0, 0.866]), q = [d[0] * 9.5, Y + 0.75, d[2] * 9.5], q2 = [d[0] * 22.5, Y + 0.75, d[2] * 22.5];
+            addCyl('iris', q, d, 13, 1.3, MET, { layer: layerBy(2, q2) });
+            addCyl('iris', q2, d, 3, 2.2, DARK, { layer: layerBy(2, q2) });
+        }
+        // 3 집광렌즈 (위가 볼록 렌즈)
+        Y = 24 + sh(3);
+        addCyl('condenser', [0, Y, 0], UP, 9, 9, [108, 113, 132], { layer: 3, cap: [130, 136, 156] });
+        addCyl('condenser', [0, Y + 9, 0], UP, 1.2, 6.5, [160, 210, 236], { layer: 3.1, cap: [192, 230, 248], alpha: 0.9 });
+        {
+            const C = proj([0, Y + 10.2, 0]), s = view.s;
+            addCustom('condenser', 3.2, 0, () => {
+                ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.beginPath();
+                ctx.ellipse(C[0] - 2.4 * s, C[1] - 0.5 * s, 1.8 * s, 0.7 * s, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+            });
+        }
+        // 4 재물대 (둘레 눈금 36개)
+        Y = 38 + sh(4);
+        addCyl('stage', [0, Y, 0], UP, 3, 19, [74, 78, 96], { layer: 4, cap: [102, 107, 126] });
+        {
+            const segs = [];
+            for (let k = 0; k < 36; k++) {
+                const a = k * Math.PI / 18, major = (k % 9 === 0), r0 = 19 * (major ? 0.84 : 0.92);
+                segs.push({ a: proj([r0 * Math.cos(a), Y + 3.02, r0 * Math.sin(a)]), b: proj([18.9 * Math.cos(a), Y + 3.02, 18.9 * Math.sin(a)]), major: major });
+            }
+            addCustom('stage', 4.1, 0, () => {
+                ctx.save();
+                for (const sg of segs) {
+                    ctx.strokeStyle = sg.major ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.65)';
+                    ctx.lineWidth = sg.major ? 1.6 : 1;
+                    ctx.beginPath(); ctx.moveTo(sg.a[0], sg.a[1]); ctx.lineTo(sg.b[0], sg.b[1]); ctx.stroke();
+                }
+                ctx.restore();
+            });
+        }
+        // 5 박편 (유리판 + 가운데 회색 시료)
+        Y = 41 + sh(5);
+        addBox('slide', [0, Y + 0.5, 0], [22, 1, 8], 0, [172, 216, 232], { layer: 5, alpha: 0.6 });
+        addCyl('slide', [0, Y + 1, 0], UP, 0.5, 2.4, [135, 130, 125], { layer: 5.1, cap: [165, 160, 152] });
+        // 6 대물렌즈 3개 + 회전판(노즈피스)
+        Y = 56 + sh(6);
+        {
+            const objs = [
+                { c: [0, Y, 0], d: [0, -1, 0], len: 12, r: 3.6, ring: [70, 110, 235] },
+                { c: [-7, Y, 3], d: [-0.4, -1, 0.25], len: 9.5, r: 3, ring: [235, 200, 60] },
+                { c: [7, Y, 3], d: [0.4, -1, 0.25], len: 7.5, r: 2.6, ring: [225, 70, 60] }
+            ];
+            for (const ob of objs) {
+                const d = norm(ob.d);
+                addCyl('objective', ob.c, d, ob.len, ob.r, [64, 68, 84], { layer: 6 });
+                const sc = [ob.c[0] + d[0] * ob.len * 0.45, ob.c[1] + d[1] * ob.len * 0.45, ob.c[2] + d[2] * ob.len * 0.45];
+                addCyl('objective', sc, d, 1.6, ob.r + 0.12, ob.ring, { layer: 6, zoff: 0.01, decor: true });
+            }
+            addCyl('objective', [0, Y, 0], UP, 4.5, 13, [98, 103, 122], { layer: 6.1, cap: [128, 133, 152] });
+        }
+        // 7 보상기 슬롯: 경통 + 45° 홈 + 꽂힌 판
+        Y = 64 + sh(7);
+        addCyl('slot', [0, Y, 0], UP, 9, 8, [90, 94, 110], { layer: 7, cap: [112, 116, 132] });
+        {
+            const d = [Math.SQRT1_2, 0, Math.SQRT1_2];
+            const gc = [d[0] * 7.4, Y + 4.5, d[2] * 7.4], pc = [d[0] * 12.5, Y + 4.5, d[2] * 12.5];
+            addBox('slot', gc, [4, 2.4, 7.5], -45, [14, 14, 22], { layer: 7.1 });
+            addBox('slot', pc, [16, 1, 6.5], -45, [206, 190, 118], { layer: layerBy(7, pc) });
+        }
+        // 8 분석기: 밀고 당기는 슬라이더 + 파란 테 원판 + 손잡이
+        Y = 74 + sh(8);
+        addBox('analyzer', [0, Y + 1, 5.5], [17, 2, 29], 0, [102, 108, 128], { layer: 8 });
+        addCyl('analyzer', [0, Y + 2, 0], UP, 0.8, 7, [96, 134, 232], { layer: 8.05, cap: [96, 134, 232] });
+        addCyl('analyzer', [0, Y + 2.8, 0], UP, 0.1, 5.6, [30, 38, 80], { layer: 8.1, cap: [30, 38, 80], decor: true });
+        addCyl('analyzer', [0, Y + 1, 20], [0, 0, 1], 5, 2.4, MET, { layer: 8.2 });
+        // 9 버틀랜드 렌즈 + 손잡이
+        Y = 78 + sh(9);
+        addCyl('bertrand', [0, Y, 0], UP, 7, 7.5, [94, 100, 118], { layer: 9, cap: [120, 126, 144] });
+        {
+            const q = [-7, Y + 3.5, 0], q2 = [-18, Y + 3.5, 0], qm = [-12, Y + 3.5, 0];
+            addCyl('bertrand', q, [-1, 0, 0], 11, 1.5, MET, { layer: layerBy(9, qm) });
+            addCyl('bertrand', q2, [-1, 0, 0], 3, 2.3, DARK, { layer: layerBy(9, qm) });
+        }
+        // 10 접안렌즈 (위쪽 고무 테)
+        Y = 85 + sh(10);
+        addCyl('eyepiece', [0, Y, 0], UP, 15, 6, [60, 62, 76], { layer: 10 });
+        addCyl('eyepiece', [0, Y + 15, 0], UP, 4, 7.6, [32, 32, 38], { layer: 10.1, cap: [46, 46, 54] });
+        addCyl('eyepiece', [0, Y + 19, 0], UP, 0.1, 4.6, [22, 28, 50], { layer: 10.2, cap: [22, 28, 50], decor: true });
+    }
+
+    function updateView() {
+        view.s = 5.3 + (3.8 - 5.3) * expl;
+        view.cx = 235;
+        view.cy = 340 + (52 + expl * 25) * CP * view.s;
+    }
+
+    // ----- 빛의 경로·진동 방향 화살표 -----
+    function head(p, ang, color) {
+        ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(p[0], p[1]);
+        ctx.lineTo(p[0] - 7 * Math.cos(ang - 0.45), p[1] - 7 * Math.sin(ang - 0.45));
+        ctx.lineTo(p[0] - 7 * Math.cos(ang + 0.45), p[1] - 7 * Math.sin(ang + 0.45));
+        ctx.closePath(); ctx.fill();
+    }
+    function dbl(p1, p2, color) {
+        const a = proj(p1), b = proj(p2), ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+        ctx.strokeStyle = color; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+        head(b, ang, color); head(a, ang + Math.PI, color);
+    }
+    function drawLight() {
+        const A = proj([0, 13 + sh(0), 0]), B = proj([0, 104 + sh(10), 0]);
+        ctx.save();
+        ctx.lineCap = 'round';
+        const LT = isLight();
+        ctx.strokeStyle = LT ? 'rgba(201,138,0,0.16)' : 'rgba(255,226,90,0.14)'; ctx.lineWidth = 9;
+        ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke();
+        ctx.setLineDash([9, 7]); ctx.lineDashOffset = -dash;
+        ctx.strokeStyle = LT ? 'rgba(201,138,0,0.85)' : 'rgba(255,226,90,0.75)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke();
+        ctx.setLineDash([]);
+        head([B[0], B[1] - 12], -Math.PI / 2, LT ? '#c98a00' : 'rgba(255,226,90,0.9)');
+        // 하부 편광판 위: 동-서 진동(노랑), 분석기 위: 남-북 진동(파랑)
+        const gy = (topI, topY, botI, botY) => (topY + sh(topI) + botY + sh(botI)) / 2;
+        // 박편 위는 빛이 두 방향으로 갈라지므로 동-서 화살표를 그리지 않음
+        const ew = [gy(1, 17.5, 2, 20), gy(3, 34.2, 4, 38)];
+        const ns = [gy(8, 76.8, 9, 78), gy(9, 85, 10, 85)];
+        ew.forEach(y => dbl([-8, y, 0], [8, y, 0], LT ? '#c98a00' : '#ffd84d'));
+        ns.forEach(y => dbl([0, y, -8], [0, y, 8], LT ? '#2f5fd0' : '#88aaff'));
+        ctx.restore();
+        ctx.save();
+        const lfs = lblFs();
+        ctx.font = lfs + "px 'Malgun Gothic', sans-serif"; ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = LT ? '#8a6200' : '#ffd84d'; ctx.fillText('노랑 화살표: 동-서 진동', 14, 8 + lfs);
+        ctx.fillStyle = LT ? '#2f5fd0' : '#88aaff'; ctx.fillText('파랑 화살표: 남-북 진동', 14, 8 + lfs + (lfs > 13.01 ? lfs * 1.3 : 16));
+        ctx.restore();
+    }
+
+    // ----- 이름표 -----
+    function anchorOf(p) {
+        const sil = (r, y) => [r * Math.cos(yaw), y, r * Math.sin(yaw)];   // 화면 오른쪽 윤곽 점
+        switch (p.id) {
+            case 'lamp': return sil(6, 11 + sh(0));
+            case 'polarizer': return sil(11, 16.8 + sh(1));
+            case 'iris': return sil(11, 20.8 + sh(2));
+            case 'condenser': return sil(9, 28.5 + sh(3));
+            case 'stage': return sil(19, 39.5 + sh(4));
+            case 'slide': return sil(9, 41.5 + sh(5));
+            case 'objective': return sil(13, 58 + sh(6));
+            case 'slot': return sil(8, 66 + sh(7));
+            case 'analyzer': return sil(8.5, 75 + sh(8));
+            case 'bertrand': return sil(7.5, 81.5 + sh(9));
+            case 'eyepiece': return sil(6, 92 + sh(10));
+            case 'focus': return [11, 38, -27];
+            case 'dimmer': return [39.5, 4.5, 14];
+            default: return [36, 4, -8];
+        }
+    }
+    // 캔버스가 화면에서 줄어 보일 때(휴대폰) 글자를 그만큼 키워 실제 화면에서 13px 이상으로 보이게 함
+    function lblFs() {
+        const cw = cv.clientWidth;
+        if (!cw || cw >= W) return 13;
+        return Math.min(24, 13 * W / cw);
+    }
+    function drawLabels() {
+        const list = PARTS.map(p => ({ p: p, pt: proj(anchorOf(p)) })).sort((a, b) => a.pt[1] - b.pt[1]);
+        const n = list.length, y0 = 34, y1 = H - 54;
+        const fs = lblFs(), big = fs > 13.01;
+        ctx.save();
+        ctx.font = fs + "px 'Malgun Gothic', sans-serif"; ctx.textBaseline = 'middle';
+        const LT = isLight();
+        let LXd = LX;
+        if (big) {
+            let mw = 0;
+            list.forEach(it => { mw = Math.max(mw, ctx.measureText(it.p.name).width); });
+            LXd = Math.min(LX, W - 8 - mw);
+        }
+        const hh = big ? fs * 1.4 : 18;
+        labelHits = [];
+        list.forEach((it, i) => {
+            const ly = y0 + i * (y1 - y0) / (n - 1), on = (sel === it.p.id || hover === it.p.id);
+            const tw = ctx.measureText(it.p.name).width;
+            labelHits.push({ id: it.p.id, x: LXd - 4, y: ly - hh / 2, w: tw + 8, h: hh });
+            if (labelHover === it.p.id) {
+                ctx.fillStyle = LT ? 'rgba(217,154,0,0.18)' : 'rgba(255,216,77,0.15)';
+                ctx.fillRect(LXd - 4, ly - hh / 2, tw + 8, hh);
+            }
+            ctx.strokeStyle = on ? (LT ? '#d99a00' : 'rgba(255,216,77,0.9)') : (LT ? 'rgba(59,74,122,0.5)' : 'rgba(136,153,204,0.5)');
+            ctx.lineWidth = on ? 1.4 : 1;
+            ctx.beginPath(); ctx.moveTo(it.pt[0], it.pt[1]); ctx.lineTo(LXd - 30, ly); ctx.lineTo(LXd - 6, ly); ctx.stroke();
+            ctx.fillStyle = on ? (LT ? '#d99a00' : '#ffd84d') : (LT ? '#3b4a7a' : '#99a8d8');
+            ctx.beginPath(); ctx.arc(it.pt[0], it.pt[1], 2.2, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = on ? (LT ? '#8a6200' : '#ffd84d') : (LT ? '#3b4a7a' : '#c8cce0');
+            ctx.fillText(it.p.name, LXd, ly);
+        });
+        ctx.restore();
+    }
+
+    // ----- 한 장면 그리기 -----
+    function draw() {
+        updateView();
+        build();
+        prims.sort((a, b) => a.layer - b.layer || a.z - b.z);
+        ctx.clearRect(0, 0, W, H);
+        for (const p of prims) p.draw();
+        if (showLight) drawLight();
+        // 마우스를 올린 부품·선택한 부품 테두리
+        const marks = [];
+        if (hover) marks.push(hover);
+        if (sel && sel !== hover) marks.push(sel);
+        ctx.save(); ctx.strokeStyle = isLight() ? '#d99a00' : '#ffd84d'; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+        for (const id of marks) for (const p of prims) if (p.part === id && p.poly) strokePoly(p.poly);
+        ctx.restore();
+        drawLabels();
+    }
+    function labelAt(x, y) {
+        for (const h of labelHits) if (x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h) return h.id;
+        return null;
+    }
+    function pickAt(x, y) {
+        for (let i = prims.length - 1; i >= 0; i--) {
+            const p = prims[i];
+            if (p.poly && ptIn(x, y, p.poly)) return p.part;
+        }
+        return null;
+    }
+
+    // ----- 애니메이션 루프 -----
+    function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+    function loop() {
+        if (!visible) { looping = false; return; }
+        const now = performance.now();
+        if (explAnim) {
+            const t = Math.min(1, (now - explAnim.t0) / explAnim.dur);
+            expl = explAnim.from + (explAnim.to - explAnim.from) * ease(t);
+            if (t >= 1) explAnim = null;
+        }
+        if (yawAnim) {
+            const t = Math.min(1, (now - yawAnim.t0) / yawAnim.dur);
+            yaw = yawAnim.from + (yawAnim.to - yawAnim.from) * ease(t);
+            if (t >= 1) yawAnim = null;
+        }
+        if (showLight) dash += 0.5;
+        draw();
+        if (showLight || explAnim || yawAnim) requestAnimationFrame(loop); else looping = false;
+    }
+    function kick() { if (visible && !looping) { looping = true; requestAnimationFrame(loop); } }
+    function redraw() { if (visible && !looping) draw(); }
+    window.__scopeRedraw = function () { if (visible) draw(); };
+
+    // ----- 오른쪽 설명 패널 -----
+    function flash(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        try { el.scrollIntoView({ block: 'nearest' }); } catch (e) { }
+        let n = 0;
+        const iv = setInterval(() => {
+            n++;
+            el.style.outline = (n % 2) ? '3px solid ' + (isLight() ? '#d99a00' : '#ffd84d') : 'none';
+            el.style.outlineOffset = '2px';
+            if (n >= 8) { clearInterval(iv); el.style.outline = ''; el.style.outlineOffset = ''; }
+        }, 250);
+    }
+    function renderPanel() {
+        const el = document.getElementById('part-panel');
+        el.innerHTML = '';
+        const h = document.createElement('h3');
+        if (!sel) {
+            h.textContent = '현미경 구조';
+            const p = document.createElement('p');
+            p.textContent = '편광현미경은 일반 광학현미경에 편광판 두 장(하부 편광판·분석기)과 재물대 회전, 보상기, 버틀랜드 렌즈를 더한 현미경입니다. 부품을 클릭해 보세요.';
+            el.append(h, p);
+            const box = document.createElement('div');
+            PARTS.slice().reverse().forEach(pt => {
+                const a = document.createElement('span');
+                a.className = 'pp-item'; a.textContent = pt.name; a.dataset.id = pt.id;
+                a.addEventListener('click', () => selectPart(pt.id));
+                box.appendChild(a);
+            });
+            el.appendChild(box);
+            return;
+        }
+        const pt = byId[sel];
+        h.textContent = pt.name;
+        const p = document.createElement('p');
+        p.textContent = pt.desc;
+        el.append(h, p, document.createElement('hr'));
+        if (pt.sim !== '—') {
+            const s = document.createElement('div');
+            s.className = 'pp-sim';
+            s.textContent = '시뮬레이션에서는: ' + pt.sim;
+            el.appendChild(s);
+        }
+        if (pt.ctl) {
+            const b = document.createElement('button');
+            b.className = 'mode-btn'; b.id = 'btn-try-obs'; b.textContent = '박편 관찰에서 해 보기';
+            b.addEventListener('click', () => { showTab('obs'); flash(pt.ctl); });
+            el.appendChild(b);
+        }
+        const back = document.createElement('div');
+        back.style.marginTop = '12px';
+        const bl = document.createElement('span');
+        bl.className = 'pp-item'; bl.id = 'pp-back'; bl.textContent = '부품 목록으로';
+        bl.addEventListener('click', () => selectPart(null));
+        back.appendChild(bl);
+        el.appendChild(back);
+    }
+    function selectPart(id) { sel = id; renderPanel(); redraw(); }
+
+    // ----- 탭 전환 -----
+    function showTab(name) {
+        const st = (name === 'struct');
+        document.getElementById('view-obs').style.display = st ? 'none' : 'flex';
+        document.getElementById('view-struct').style.display = st ? 'flex' : 'none';
+        document.getElementById('tab-obs').className = 'mode-btn' + (st ? '' : ' active-xpl');
+        document.getElementById('tab-struct').className = 'mode-btn' + (st ? ' active-xpl' : '');
+        if (st) {
+            // 자동 회전 중이면 끈다
+            if (typeof autoRotate !== 'undefined' && autoRotate) document.getElementById('btn-rotate').click();
+            visible = true; draw(); kick();
+        } else {
+            visible = false;
+        }
+    }
+    document.getElementById('tab-obs').addEventListener('click', () => showTab('obs'));
+    document.getElementById('tab-struct').addEventListener('click', () => showTab('struct'));
+
+    // ----- 위쪽 버튼 -----
+    function setExplodeLabel(to) { document.getElementById('btn-explode').textContent = to ? '조립도' : '분해도'; }
+    document.getElementById('btn-explode').addEventListener('click', () => {
+        const to = (expl > 0.5 && !(explAnim && explAnim.to === 0)) ? 0 : 1;
+        explAnim = { from: expl, to: to, t0: performance.now(), dur: 400 };
+        setExplodeLabel(to); kick();
+    });
+    document.getElementById('btn-lightpath').addEventListener('click', function () {
+        showLight = !showLight;
+        this.className = 'mode-btn' + (showLight ? ' active-ppl' : '');
+        if (showLight) kick(); else redraw();
+    });
+    document.getElementById('btn-front').addEventListener('click', () => {
+        yawAnim = { from: yaw, to: 0, t0: performance.now(), dur: 300 }; kick();
+    });
+
+    // ----- 끌어서 돌리기 / 올려보기 / 클릭 -----
+    let drag = null;
+    function canvasXY(e) {
+        const r = cv.getBoundingClientRect();
+        return [(e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height];
+    }
+    cv.addEventListener('pointerdown', (e) => {
+        drag = { x: e.clientX, y: e.clientY, yaw: yaw, moved: false };
+        yawAnim = null;
+        try { cv.setPointerCapture(e.pointerId); } catch (err) { }
+    });
+    cv.addEventListener('pointermove', (e) => {
+        if (drag) {
+            const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+            if (Math.hypot(dx, dy) >= 5) drag.moved = true;
+            if (drag.moved) {
+                yaw = Math.max(-YAW_MAX, Math.min(YAW_MAX, drag.yaw + dx * 0.4 * Math.PI / 180));
+                cv.style.cursor = 'grabbing';
+                redraw();
+            }
+            return;
+        }
+        const xy = canvasXY(e), lid = labelAt(xy[0], xy[1]), id = lid || pickAt(xy[0], xy[1]);
+        cv.style.cursor = id ? 'pointer' : 'default';
+        if (id !== hover || lid !== labelHover) { hover = id; labelHover = lid; redraw(); }
+    });
+    cv.addEventListener('pointerup', (e) => {
+        if (!drag) return;
+        const moved = drag.moved;
+        drag = null;
+        try { cv.releasePointerCapture(e.pointerId); } catch (err) { }
+        const xy = canvasXY(e), lid = labelAt(xy[0], xy[1]), id = lid || pickAt(xy[0], xy[1]);
+        if (!moved && !(lid && lid === sel)) selectPart(id);
+        hover = id; labelHover = lid;
+        cv.style.cursor = id ? 'pointer' : 'default';
+        redraw();
+    });
+    cv.addEventListener('pointercancel', () => { drag = null; });
+    cv.addEventListener('pointerleave', () => { if (!drag && (hover || labelHover)) { hover = null; labelHover = null; redraw(); } });
+
+    // ----- 시작 해시: tab=struct, part=<id>, explode=1 -----
+    (function () {
+        const h = new URLSearchParams(location.hash.slice(1));
+        if (h.get('explode') === '1') { expl = 1; setExplodeLabel(1); }
+        const pid = h.get('part');
+        if (pid && byId[pid]) sel = pid;
+        renderPanel();
+        if (h.get('tab') === 'struct') showTab('struct');
+    })();
+})();
+    </script>
+</body>
+
+</html>
