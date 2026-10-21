@@ -242,12 +242,24 @@
             border: 1px solid rgba(100, 220, 180, 0.3);
         }
 
-        #mineral-desc {
-            font-size: 14px;
-            color: #e6e9f5;
-            line-height: 1.75;
+        /* ===== 관찰 설명 카드 (G12) ===== */
+        #obs-card {
+            background: #22264a; border-left: 4px solid #9fb3ff; border-radius: 8px;
+            padding: 14px 14px 12px; margin-bottom: 16px;
+            font-size: 15px; line-height: 1.75; color: #e6e9f5;
+            box-shadow: 0 0 0 1px rgba(159, 179, 255, 0.25);
         }
-        #mineral-desc b { color: #ffd84d; font-weight: bold; }
+        #obs-card .obs-title { font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 8px; }
+        #obs-card .obs-sub { font-size: 13.5px; font-weight: bold; color: #9fb3ff; margin: 10px 0 2px; }
+        #obs-card .obs-part:first-of-type .obs-sub { margin-top: 0; }
+        #obs-card b { color: #ffd84d; font-weight: bold; }
+        #obs-card #obs-now-event { display: none; }
+        #obs-card.obs-flash { animation: obsFlash 0.6s ease-out 1; }
+        @keyframes obsFlash {
+            0% { box-shadow: 0 0 0 1px rgba(159, 179, 255, 0.25); }
+            35% { box-shadow: 0 0 0 3px rgba(255, 216, 77, 0.85), 0 0 14px rgba(255, 216, 77, 0.45); }
+            100% { box-shadow: 0 0 0 1px rgba(159, 179, 255, 0.25); }
+        }
 
         .legend-section {
             margin-top: 14px;
@@ -407,9 +419,17 @@
         body.light #btn-guide-close, body.light #glossary-list .gl-none { color: #5a6478; }
         body.light #btn-guide-close { border-color: #c9cfdc; background: #eef1f7; }
         body.light #btn-guide-close:hover { color: #1f2430; }
-        body.light .info-value, body.light #now-explain { color: #1f2430 !important; }
-        body.light #mineral-desc { color: #1f2430; }
-        body.light #mineral-desc b { color: #9a6a00; }
+        body.light .info-value { color: #1f2430 !important; }
+        body.light #obs-card { background: #fff8e6; border-left-color: #3b4a7a; color: #1f2430; box-shadow: 0 0 0 1px rgba(59, 74, 122, 0.25); }
+        body.light #obs-card .obs-title { color: #1f2430; }
+        body.light #obs-card .obs-sub { color: #3b4a7a; }
+        body.light #obs-card b { color: #926400; }
+        body.light #obs-card.obs-flash { animation-name: obsFlashLight; }
+        @keyframes obsFlashLight {
+            0% { box-shadow: 0 0 0 1px rgba(59, 74, 122, 0.25); }
+            35% { box-shadow: 0 0 0 3px rgba(154, 106, 0, 0.8), 0 0 14px rgba(154, 106, 0, 0.35); }
+            100% { box-shadow: 0 0 0 1px rgba(59, 74, 122, 0.25); }
+        }
         body.light #info-panel div[style*="#8899aa"], body.light #info-panel span[style*="#8899aa"] { color: #5a6478 !important; }
         body.light #grain-info div { color: #1f2430; }
         body.light #grain-info div[style*="#8899aa"] { color: #5a6478 !important; }
@@ -511,7 +531,7 @@
             #glossary-close { min-width: 44px; }
             #term-tip { max-width: calc(100vw - 24px); }
             #ui-container2 > label:last-child > span:first-child { display: none; }
-            #activity-text, #mineral-desc, #now-explain, #part-panel, #glossary-list .gl-item, #term-tip { word-break: keep-all; overflow-wrap: anywhere; }
+            #activity-text, #obs-card, #part-panel, #glossary-list .gl-item, #term-tip { word-break: keep-all; overflow-wrap: anywhere; }
         }
         /* ===== 간단판 (G11) — body.lite 일 때만 적용 ===== */
         body.lite .lite-hide, body.lite #btn-bertrand, body.lite #mode-badge { display: none !important; }
@@ -624,6 +644,18 @@
     <div id="main-area">
         <canvas id="microscope" width="520" height="520"></canvas>
         <div id="info-panel">
+            <div id="obs-card">
+                <div class="obs-title">관찰 설명</div>
+                <div class="obs-part" id="obs-now-event"></div>
+                <div class="obs-part" id="obs-mineral">
+                    <div class="obs-sub">이 광물</div>
+                    <div id="obs-mineral-body"></div>
+                </div>
+                <div class="obs-part" id="obs-screen">
+                    <div class="obs-sub">지금 화면</div>
+                    <div id="obs-screen-body"></div>
+                </div>
+            </div>
             <h3>관찰 상태</h3>
             <div class="info-row">
                 <span class="info-label">관찰 모드</span>
@@ -662,16 +694,6 @@
                     <span class="info-value" id="info-pleo">-</span>
                 </div>
                 <div id="color-swatch" class="lite-hide"></div>
-            </div>
-
-            <div class="legend-section">
-                <h3>광물 설명</h3>
-                <div id="mineral-desc"></div>
-            </div>
-
-            <div class="legend-section">
-                <h3>지금 보이는 것</h3>
-                <div id="now-explain" style="font-size:14px;line-height:1.7;color:#e6e9f5"></div>
             </div>
 
             <div class="legend-section">
@@ -826,6 +848,7 @@
                 relief: 0.15, alteration: 0, cleavageAngles: null,
                 extinctionDesc: '파동 소광',
                 description: '무색 광물. PPL에서 무색투명, 표면이 깨끗하고 렐리프가 낮음. XPL에서 1차 회백색 간섭색과 특징적인 <b>파동 소광</b>(그레인 안에서 소광 위치가 물결처럼 어긋남). 벽개·쌍정·변질이 없는 것이 감별 포인트. 코노스코프에서 일축성(+) 간섭상.',
+                simple: '무색투명하고 표면이 깨끗하다. 직교 니콜(XPL)에서는 회색~흰색으로 보이고, 돌리면 알갱이 안의 어두운 부분이 물결처럼 옮겨 간다(<b>파동 소광</b>). 쪼개짐과 줄무늬가 없다.',
                 pleochroismDesc: '없음', opacity: 0.45
             },
             {
@@ -840,6 +863,7 @@
                 extinctionDesc: '사소광 (소광각 작음)',
                 twinning: 'albite', twinAngle: 18, // 알바이트 쌍정: 인접 도메인 간 방향 차이 (시각적 대비를 위해 강조)
                 description: 'PPL에서 무색투명. XPL에서 <b>알바이트 쌍정</b>에 의한 평행한 흑백 줄무늬가 가장 큰 특징. 인접한 쌍정 라멜라의 결정학적 방향이 달라 교대로 소광하며, 재물대를 회전하면 밝은 띠와 어두운 띠가 서로 반전됨. 사장석을 다른 장석(정장석 등)과 구별하는 결정적 기준.',
+                simple: '무색투명하다. 직교 니콜(XPL)에서 알갱이 안에 <b>나란한 흑백 줄무늬</b>가 보인다. 이 줄무늬는 결정 방향이 번갈아 다른 부분이 붙어 자란 것으로, <b>알바이트 쌍정</b>이라고 한다. 돌리면 밝은 줄과 어두운 줄이 서로 바뀐다.',
                 pleochroismDesc: '없음', opacity: 0.5
             },
             {
@@ -853,6 +877,7 @@
                 relief: 0.2, alteration: 0.75, cleavageAngles: [0, 90],
                 extinctionDesc: '직소광',
                 description: 'PPL에서 무색이지만 <b>표면이 뿌옇게 흐리다</b>. 물과 반응해 광물 일부가 <b>점토 광물로 변했기(변질) 때문</b>이다. 깨끗한 석영과 구별하는 결정적 단서. XPL에서 1차 회색, 쌍정이 없거나 단순함. 2방향 직교 벽개.',
+                simple: '무색이지만 <b>표면이 뿌옇게 흐리다</b>. 물과 반응해 광물 일부가 <b>점토 광물로 변했기(변질) 때문</b>이다. 직교 니콜(XPL)에서는 회색으로 보이고, 줄무늬는 없거나 단순하다.',
                 pleochroismDesc: '없음', opacity: 0.5
             },
             {
@@ -879,6 +904,7 @@
                 relief: 0.5, alteration: 0, cleavageAngles: [0],
                 extinctionDesc: '얼룩 소광',
                 description: '강한 다색성이 특징. PPL에서 재물대 회전 시 <b>진한 갈색↔연한 황색</b>으로 뚜렷하게 변화. 1방향 완벽 벽개, <b>얼룩 소광</b>(소광이 얼룩덜룩하게 일어남). 2V가 매우 작아(≈15°) 코노스코프에서 거의 일축성처럼 보임.',
+                simple: '갈색의 판 모양 광물이다. 개방 니콜(PPL)에서 돌리면 <b>진한 갈색↔연한 황색</b>으로 색이 크게 바뀐다(다색성). 한 방향으로 나란한 쪼개짐이 있다.',
                 pleochroismDesc: '강함 (갈색↔연황색)', opacity: 0.7
             },
             {
@@ -892,6 +918,7 @@
                 relief: 0.6, alteration: 0, cleavageAngles: [62, 118], longCleavage: [0],
                 extinctionDesc: '사소광 (소광각 ≈20°)',
                 description: '뚜렷한 다색성. PPL에서 <b>녹색↔갈색</b>으로 변화. <b>124°/56° 벽개각</b>이 특징(비스듬함). 소광각이 작은 사소광(≈20°) — 휘석(≈42°)과 구별. 코노스코프에서 이축성(-) 간섭상.',
+                simple: '녹색~갈색 광물이다. 개방 니콜(PPL)에서 돌리면 <b>녹색↔갈색</b>으로 색이 뚜렷하게 바뀐다(다색성). 두 방향 쪼개짐이 비스듬히(약 56°와 124°) 만난다.',
                 pleochroismDesc: '강함 (녹색↔갈색)', opacity: 0.6
             },
             {
@@ -918,6 +945,7 @@
                 relief: 0.65, alteration: 0, cleavageAngles: [46.5, 133.5], longCleavage: [0],
                 extinctionDesc: '사소광 (소광각 ≈42°)',
                 description: 'PPL에서 <b>연녹색↔연갈색으로 약하게</b> 변함(약한 다색성). <b>87°/93° 벽개각</b>이 특징(거의 직각 — 각섬석과 구별). 소광각이 큰 사소광(≈42°). 코노스코프에서 이축성(+) 간섭상.',
+                simple: '연한 녹색~갈색 광물이다. 개방 니콜(PPL)에서 돌리면 <b>연녹색↔연갈색으로 아주 약하게</b> 바뀐다. 두 방향 쪼개짐이 거의 직각(약 87°와 93°)으로 만난다.',
                 pleochroismDesc: '약함 (연녹↔연갈)', opacity: 0.55
             },
             {
@@ -2018,6 +2046,49 @@
             }
         }
 
+        // ===== 관찰 설명 카드 (G12): '방금 본 것' — 소광을 직접 봤을 때만 =====
+        const OBS_EVENT_HTML = '<div class="obs-sub">방금 본 것</div>선택한 알갱이가 검게 변했다. 이것을 <b>소광</b>이라고 한다. 알갱이 속을 지나는 빛의 <b>진동 방향이 십자선(편광판·분석기의 방향)과 나란해지면</b>, 빛이 분석기를 지나지 못해 검게 보인다.';
+        let obsKey = null, obsShown = false, obsPrevBright = null, obsPrevGrain = null, obsPrevEff = null, obsSig = null;
+        function updateObsCard(mineral, stageAngle) {
+            const card = document.getElementById('obs-card');
+            const ev = document.getElementById('obs-now-event');
+            const key = mineral.id + '|' + currentMode + '|' + (quizMode ? 'q' : '');
+            if (key !== obsKey) { obsKey = key; obsShown = false; obsPrevBright = null; obsPrevEff = null; }
+            // 현재 밝기 (XPL·보상기 없음·선택 알갱이·등방성 제외)
+            let pct = null, effDeg = null;
+            if (currentMode === 'xpl' && selectedGrain && getCompensatorR() <= 0 && mineral.opticType !== 'isotropic') {
+                const g = selectedGrain;
+                const effA = (g.orientation + stageAngle - (g.extAngle ?? mineral.extinctionAngle)) * Math.PI / 180;
+                effDeg = effA * 180 / Math.PI;
+                pct = Math.round(Math.sin(2 * effA) ** 2 * 100);
+            }
+            if (selectedGrain !== obsPrevGrain) { obsPrevGrain = selectedGrain; obsPrevBright = null; obsPrevEff = null; }
+            if (pct !== null) {
+                if (!obsShown && obsPrevBright !== null && obsPrevBright > 3 && pct <= 3) obsShown = true;
+                // 빠르게 돌려 소광 위치(90°의 정수배)를 지나쳤는지: 짧은 쪽 각도 차, 90° 이상 점프는 제외
+                if (!obsShown && obsPrevEff !== null) {
+                    const d = ((effDeg - obsPrevEff + 540) % 360 + 360) % 360 - 180;
+                    if (Math.abs(d) < 90 && Math.floor(obsPrevEff / 90) !== Math.floor((obsPrevEff + d) / 90)) obsShown = true;
+                }
+                obsPrevBright = pct;
+                obsPrevEff = effDeg;
+            } else {
+                obsPrevBright = null;
+                obsPrevEff = null;
+            }
+            if (obsShown) { ev.innerHTML = OBS_EVENT_HTML; ev.style.display = 'block'; }
+            else { ev.innerHTML = ''; ev.style.display = 'none'; }
+            // 내용이 바뀌면 테두리를 한 번 강조
+            const sig = document.getElementById('obs-mineral-body').innerHTML + '||' + document.getElementById('obs-screen-body').innerHTML + '||' + (obsShown ? 1 : 0);
+            if (obsSig !== null && sig !== obsSig) {
+                card.classList.remove('obs-flash');
+                void card.offsetWidth;
+                card.classList.add('obs-flash');
+                setTimeout(() => card.classList.remove('obs-flash'), 700);
+            }
+            obsSig = sig;
+        }
+
         function updateInfoPanel(mineral, stageAngle) {
             const modeBadge = document.getElementById('mode-badge');
             const obsMode = document.getElementById('obs-mode');
@@ -2066,7 +2137,7 @@
                 swatch.style.background = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
             }
 
-            document.getElementById('mineral-desc').innerHTML = mineral.description;
+            document.getElementById('obs-mineral-body').innerHTML = (LITE && mineral.simple) ? mineral.simple : mineral.description;
 
             // 동정 모드: 광물 정보를 가리고 관찰로 판단하게 한다
             const swatchEl = document.getElementById('color-swatch');
@@ -2075,7 +2146,7 @@
                 ['info-optic', 'info-bire', 'info-retard', 'info-order', 'info-ext', 'info-pleo']
                     .forEach(id => { document.getElementById(id).textContent = '관찰로 판단'; });
                 swatchEl.style.display = 'none';
-                document.getElementById('mineral-desc').textContent =
+                document.getElementById('obs-mineral-body').textContent =
                     '개방니콜(PPL)에서 색·다색성·벽개·렐리프·변질을, 직교니콜(XPL)에서 간섭색·소광·쌍정을 관찰하여 광물 이름을 판정하시오.';
             } else {
                 swatchEl.style.display = '';
@@ -2096,7 +2167,7 @@
                     } else if (compSel === 'wedge') {
                         t = '석영 쐐기를 밀어 넣을수록 경로차가 연속으로 더해져 배경 간섭색이 1차→2차→3차로 올라갑니다. 광물과 감산 방향일 때 광물이 검게 되는 삽입량으로 광물의 경로차를 잴 수 있습니다.';
                     } else {
-                        t = '직교니콜: 편광판과 분석기가 직교해 광물이 없으면 검게 보입니다. 광물 안에서 두 빛으로 갈라진 빛의 경로차가 간섭색을 만들고, 진동 방향이 십자선과 나란해지면 어두워집니다(소광, 한 바퀴에 4번).';
+                        t = '직교니콜: 편광판과 분석기가 직교해 광물이 없으면 검게 보입니다. 광물 안에서 두 빛으로 갈라진 빛의 경로차가 간섭색을 만들고, 진동 방향이 십자선과 나란해지면 어두워집니다(소광).';
                         if (iso) t += '<br>이 광물은 등방성이라 빛이 갈라지지 않아 재물대를 돌려도 항상 검습니다.';
                     }
                 } else {
@@ -2105,8 +2176,9 @@
                     else if (compSel === 'quarter') t += '<br>λ/4판을 넣으면 일축성 (+)는 2·4사분면(북서·남동)의 중심 가까이에 검은 점이 생기고, (−)는 1·3사분면에 생깁니다.';
                     if (iso) t += '<br>등방성 광물은 간섭상이 생기지 않습니다.';
                 }
-                document.getElementById('now-explain').innerHTML = t;
+                document.getElementById('obs-screen-body').innerHTML = t;
             }
+            updateObsCard(mineral, stageAngle);
 
             // 선택 그레인이 바뀌면 소광각 측정 기록 초기화
             if (selectedGrain !== lastSelForMeasure) {
@@ -2452,9 +2524,9 @@
         // ===== 학습지 활동 안내판 (G2) =====
         // 활동별 안내 문구 (정답이 되는 낱말은 넣지 않는다)
         const ACT_GUIDE = {
-            1: '① 직교 니콜(XPL) 상태입니다. 시야의 알갱이 하나를 클릭하시오.<br>② [자동 회전]을 켜거나 재물대 막대를 돌리며, \'현재 밝기\'가 0%가 되는 횟수를 한 바퀴(360°) 동안 세시오.<br>③ \'지금 보이는 것\' 칸에서 알갱이가 어두워지는 까닭을 찾으시오.',
-            2: '① 개방 니콜(PPL) 상태입니다. 광물 선택에서 석영과 정장석을 번갈아 고르시오.<br>② 표면이 뿌옇게 흐린 광물을 찾고, \'광물 설명\' 칸에서 흐린 까닭을 찾으시오.',
-            3: '① 직교 니콜(XPL) 상태입니다. 광물 선택에서 석영과 사장석을 번갈아 고르시오.<br>② 나란한 흑백 줄무늬가 보이는 광물을 찾고, \'광물 설명\' 칸에서 그 줄무늬의 이름을 찾으시오.',
+            1: '① 직교 니콜(XPL) 상태입니다. 시야의 알갱이 하나를 클릭하시오.<br>② [자동 회전]을 켜거나 재물대 막대를 돌리며, 고른 알갱이가 검게 변하는 횟수를 한 바퀴(360°) 동안 세어 보시오.',
+            2: '① 개방 니콜(PPL) 상태입니다. 광물 선택에서 석영과 정장석을 번갈아 고르시오.<br>② 두 광물의 알갱이 표면을 비교해 보시오.',
+            3: '① 직교 니콜(XPL) 상태입니다. 광물 선택에서 석영과 사장석을 번갈아 고르시오.<br>② 재물대를 돌리며 두 광물의 알갱이 안 무늬를 비교해 보시오.',
             4: '① 화면 제목에 (세트 1), 광물 선택에 \'시료 3\'이 보이는지 확인하시오.<br>② [PPL]에서 재물대를 돌리며 시료 3의 색이 어떻게 바뀌는지 보시오.<br>③ [동정 모드]를 눌러 끄고 흑운모·각섬석·휘석을 차례로 골라 비교한 뒤, 다시 눌러 시료 3으로 돌아오시오.'
         };
         // 활동별 반짝일 대상 id
