@@ -242,19 +242,17 @@
             border: 1px solid rgba(100, 220, 180, 0.3);
         }
 
-        /* ===== 관찰 설명 카드 (G12) ===== */
-        #obs-card {
+        /* ===== 관찰 설명 카드 (G12·G13 → G15: 카드 세 장) ===== */
+        .obs-card {
             background: #22264a; border-left: 4px solid #9fb3ff; border-radius: 8px;
-            padding: 14px 14px 12px; margin-bottom: 16px;
+            padding: 14px 14px 12px; margin-bottom: 10px;
             font-size: 15px; line-height: 1.75; color: #e6e9f5;
             box-shadow: 0 0 0 1px rgba(159, 179, 255, 0.25);
         }
-        #obs-card .obs-title { font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 8px; }
-        #obs-card .obs-sub { font-size: 13.5px; font-weight: bold; color: #9fb3ff; margin: 10px 0 2px; }
-        #obs-card .obs-part:first-of-type .obs-sub { margin-top: 0; }
-        #obs-card b { color: #ffd84d; font-weight: bold; }
-        #obs-card #obs-now-event { display: none; }
-        #obs-card.obs-flash { animation: obsFlash 0.6s ease-out 1; }
+        #card-screen { margin-bottom: 16px; }
+        .obs-card .obs-card-title { font-size: 15px; font-weight: bold; color: #ffffff; margin-bottom: 6px; }
+        .obs-card b { color: #ffd84d; font-weight: bold; }
+        .obs-card.obs-flash { animation: obsFlash 0.6s ease-out 1; }
         @keyframes obsFlash {
             0% { box-shadow: 0 0 0 1px rgba(159, 179, 255, 0.25); }
             35% { box-shadow: 0 0 0 3px rgba(255, 216, 77, 0.85), 0 0 14px rgba(255, 216, 77, 0.45); }
@@ -420,11 +418,10 @@
         body.light #btn-guide-close { border-color: #c9cfdc; background: #eef1f7; }
         body.light #btn-guide-close:hover { color: #1f2430; }
         body.light .info-value { color: #1f2430 !important; }
-        body.light #obs-card { background: #fff8e6; border-left-color: #3b4a7a; color: #1f2430; box-shadow: 0 0 0 1px rgba(59, 74, 122, 0.25); }
-        body.light #obs-card .obs-title { color: #1f2430; }
-        body.light #obs-card .obs-sub { color: #3b4a7a; }
-        body.light #obs-card b { color: #926400; }
-        body.light #obs-card.obs-flash { animation-name: obsFlashLight; }
+        body.light .obs-card { background: #fff8e6; border-left-color: #3b4a7a; color: #1f2430; box-shadow: 0 0 0 1px rgba(59, 74, 122, 0.25); }
+        body.light .obs-card .obs-card-title { color: #1f2430; }
+        body.light .obs-card b { color: #926400; }
+        body.light .obs-card.obs-flash { animation-name: obsFlashLight; }
         @keyframes obsFlashLight {
             0% { box-shadow: 0 0 0 1px rgba(59, 74, 122, 0.25); }
             35% { box-shadow: 0 0 0 3px rgba(154, 106, 0, 0.8), 0 0 14px rgba(154, 106, 0, 0.35); }
@@ -531,7 +528,7 @@
             #glossary-close { min-width: 44px; }
             #term-tip { max-width: calc(100vw - 24px); }
             #ui-container2 > label:last-child > span:first-child { display: none; }
-            #activity-text, #obs-card, #part-panel, #glossary-list .gl-item, #term-tip { word-break: keep-all; overflow-wrap: anywhere; }
+            #activity-text, .obs-card, #part-panel, #glossary-list .gl-item, #term-tip { word-break: keep-all; overflow-wrap: anywhere; }
         }
         /* ===== 간단판 (G11) — body.lite 일 때만 적용 ===== */
         body.lite .lite-hide, body.lite #btn-bertrand, body.lite #mode-badge { display: none !important; }
@@ -645,17 +642,17 @@
     <div id="main-area">
         <canvas id="microscope" width="520" height="520"></canvas>
         <div id="info-panel">
-            <div id="obs-card">
-                <div class="obs-title">관찰 설명</div>
-                <div class="obs-part" id="obs-now-event"></div>
-                <div class="obs-part" id="obs-mineral">
-                    <div class="obs-sub">이 광물</div>
-                    <div id="obs-mineral-body"></div>
-                </div>
-                <div class="obs-part" id="obs-screen">
-                    <div class="obs-sub">지금 화면</div>
-                    <div id="obs-screen-body"></div>
-                </div>
+            <div class="obs-card" id="card-event" style="display:none">
+                <div class="obs-card-title">방금 본 것</div>
+                <div id="obs-event-body"></div>
+            </div>
+            <div class="obs-card" id="card-mineral">
+                <div class="obs-card-title" id="card-mineral-title"></div>
+                <div id="obs-mineral-body"></div>
+            </div>
+            <div class="obs-card" id="card-screen">
+                <div class="obs-card-title" id="card-screen-title"></div>
+                <div id="obs-screen-body"></div>
             </div>
             <h3>관찰 상태</h3>
             <div class="info-row">
@@ -2047,12 +2044,23 @@
             }
         }
 
-        // ===== 관찰 설명 카드 (G12): '방금 본 것' — 소광을 직접 봤을 때만 =====
-        const OBS_EVENT_HTML = '<div class="obs-sub">방금 본 것</div>선택한 알갱이가 검게 변했다. 이것을 <b>소광</b>이라고 한다. 알갱이 속을 지나는 빛의 <b>진동 방향이 십자선(편광판·분석기의 방향)과 나란해지면</b>, 빛이 분석기를 지나지 못해 검게 보인다.';
-        let obsKey = null, obsShown = false, obsPrevBright = null, obsPrevGrain = null, obsPrevEff = null, obsSig = null;
+        // ===== 관찰 설명 카드 (G12·G13 → G15): 카드 세 장 =====
+        const OBS_EVENT_HTML = '선택한 알갱이가 검게 변했다. 이것을 <b>소광</b>이라고 한다. 알갱이 속을 지나는 빛의 <b>진동 방향이 십자선(편광판·분석기의 방향)과 나란해지면</b>, 빛이 분석기를 지나지 못해 검게 보인다.';
+        const OBS_CARDS = [['event', 'card-event', 'obs-event-body'], ['mineral', 'card-mineral', 'obs-mineral-body'], ['screen', 'card-screen', 'obs-screen-body']];
+        let obsKey = null, obsShown = false, obsPrevBright = null, obsPrevGrain = null, obsPrevEff = null;
+        const obsCardSig = {};
+        // 그 카드만 0.6초 테두리 강조
+        function flashObsCard(el) {
+            if (!el) return;
+            el.classList.remove('obs-flash');
+            void el.offsetWidth;
+            el.classList.add('obs-flash');
+            clearTimeout(el._obsFlashTimer);
+            el._obsFlashTimer = setTimeout(() => el.classList.remove('obs-flash'), 700);
+        }
         function updateObsCard(mineral, stageAngle) {
-            const card = document.getElementById('obs-card');
-            const ev = document.getElementById('obs-now-event');
+            const evCard = document.getElementById('card-event');
+            const ev = document.getElementById('obs-event-body');
             const key = mineral.id + '|' + currentMode + '|' + (quizMode ? 'q' : '');
             if (key !== obsKey) { obsKey = key; obsShown = false; obsPrevBright = null; obsPrevEff = null; }
             // 현재 밝기 (XPL·보상기 없음·선택 알갱이·등방성 제외)
@@ -2077,17 +2085,15 @@
                 obsPrevBright = null;
                 obsPrevEff = null;
             }
-            if (obsShown) { ev.innerHTML = OBS_EVENT_HTML; ev.style.display = 'block'; }
-            else { ev.innerHTML = ''; ev.style.display = 'none'; }
-            // 내용이 바뀌면 테두리를 한 번 강조
-            const sig = document.getElementById('obs-mineral-body').innerHTML + '||' + document.getElementById('obs-screen-body').innerHTML + '||' + (obsShown ? 1 : 0);
-            if (obsSig !== null && sig !== obsSig) {
-                card.classList.remove('obs-flash');
-                void card.offsetWidth;
-                card.classList.add('obs-flash');
-                setTimeout(() => card.classList.remove('obs-flash'), 700);
-            }
-            obsSig = sig;
+            if (obsShown) { ev.innerHTML = OBS_EVENT_HTML; evCard.style.display = 'block'; }
+            else { ev.innerHTML = ''; evCard.style.display = 'none'; }
+            // 카드별로 내용(제목+본문)이 바뀌면 그 카드만 강조
+            OBS_CARDS.forEach(([key, cardId, bodyId]) => {
+                const el = document.getElementById(cardId);
+                const sig = el.querySelector('.obs-card-title').textContent + '||' + document.getElementById(bodyId).innerHTML;
+                if (obsCardSig[key] !== undefined && sig !== obsCardSig[key]) flashObsCard(el);
+                obsCardSig[key] = sig;
+            });
         }
 
         function updateInfoPanel(mineral, stageAngle) {
@@ -2138,12 +2144,14 @@
                 swatch.style.background = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
             }
 
+            document.getElementById('card-mineral-title').textContent = mineral.name.split('(')[0].trim();
             document.getElementById('obs-mineral-body').innerHTML = (LITE && mineral.simple) ? mineral.simple : mineral.description;
 
             // 동정 모드: 광물 정보를 가리고 관찰로 판단하게 한다
             const swatchEl = document.getElementById('color-swatch');
             if (quizMode) {
                 document.getElementById('info-name').textContent = '시료 ' + (mineralSelect.selectedIndex + 1);
+                document.getElementById('card-mineral-title').textContent = mineralSelect.options[mineralSelect.selectedIndex].textContent;
                 ['info-optic', 'info-bire', 'info-retard', 'info-order', 'info-ext', 'info-pleo']
                     .forEach(id => { document.getElementById(id).textContent = '관찰로 판단'; });
                 swatchEl.style.display = 'none';
@@ -2157,6 +2165,11 @@
             {
                 const compSel = document.getElementById('comp-select').value;
                 const iso = mineral.opticType === 'isotropic' && !quizMode;
+                // 카드 제목 = 지금 관찰 방법
+                const screenTitle = currentMode === 'ppl' ? '개방 니콜(PPL)로 볼 때'
+                    : currentMode === 'bertrand' ? '코노스코프(Bertrand)로 볼 때'
+                        : compSel === 'none' ? '직교 니콜(XPL)로 볼 때' : '직교 니콜 + 보상기';
+                document.getElementById('card-screen-title').textContent = screenTitle;
                 let t;
                 if (currentMode === 'ppl') {
                     t = '개방니콜: 분석기를 빼서 편광판 하나만 지난 빛을 봅니다. 보이는 색은 광물 고유의 색이고, 재물대를 돌릴 때 색이 바뀌면 다색성입니다. 윤곽이 뚜렷할수록 렐리프가 높습니다.';
@@ -2177,6 +2190,8 @@
                     else if (compSel === 'quarter') t += '<br>λ/4판을 넣으면 일축성 (+)는 2·4사분면(북서·남동)의 중심 가까이에 검은 점이 생기고, (−)는 1·3사분면에 생깁니다.';
                     if (iso) t += '<br>등방성 광물은 간섭상이 생기지 않습니다.';
                 }
+                // 카드 제목과 겹치는 머리말(개방니콜: / 직교니콜: / 코노스코프: )만 뗀다
+                t = t.replace(/^(개방니콜|직교니콜|코노스코프):\s*/, '');
                 document.getElementById('obs-screen-body').innerHTML = t;
             }
             updateObsCard(mineral, stageAngle);
