@@ -555,6 +555,7 @@
 </head>
 
 <body>
+    <script>/* 첫 화면 깜박임 방지 (G14) */try{var h=new URLSearchParams(location.hash.slice(1)).get('theme'),on=true;if(h==='dark')on=false;else if(h!=='light'){try{if(localStorage.getItem('pm-theme')==='dark')on=false;}catch(e){}}if(on)document.body.classList.add('light');}catch(e){}</script>
     <h1>편광 현미경 시뮬레이션</h1>
     <button class="mode-btn" id="btn-theme" title="화면 밝기 바꾸기">밝은 화면</button>
 
@@ -777,8 +778,8 @@
             if (save) { try { localStorage.setItem('pm-theme', on ? 'light' : 'dark'); } catch (e) { } }
         }
         (function initTheme() {
-            let on = false;
-            try { if (localStorage.getItem('pm-theme') === 'light') on = true; } catch (e) { }
+            let on = true;
+            try { if (localStorage.getItem('pm-theme') === 'dark') on = false; } catch (e) { }
             const ht = new URLSearchParams(location.hash.slice(1)).get('theme');
             if (ht === 'light') on = true; else if (ht === 'dark') on = false;
             setTheme(on, false);
